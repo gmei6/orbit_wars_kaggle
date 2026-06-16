@@ -24,23 +24,31 @@ class Fleet:
 
 @dataclass
 class State:
-    turn: int
+    step: int
     me: int
     planets: list
-    comets: list
+    initial_planets: dict
+    comets_data: list
     fleets: list
+    angular_velocity: float
     def mine(self): return [p for p in self.planets if p.owner == self.me]
     def targets(self): return [p for p in self.planets if p.owner != self.me]
 
 
 def parse(obs: dict) -> State:
-    """obs keys: turn, my_id, planets[], comets[], fleets[] (raw arrays).
-    Planet row [id,owner,x,y,radius,ships,production];
-    Fleet row [id,owner,x,y,angle,source_planet_id,ships]."""
+    """obs keys: step, player/my_id, planets, initial_planets, comets, fleets."""
     P = [Planet(*row[:7]) for row in obs.get("planets", [])]
-    C = [Comet(int(r[0]), int(r[1]), r[2], r[3], int(r[-1])) for r in obs.get("comets", [])]
+    IP = {int(row[0]): Planet(*row[:7]) for row in obs.get("initial_planets", [])}
     F = [Fleet(*row[:7]) for row in obs.get("fleets", [])]
-    return State(int(obs.get("turn", 0)), int(obs.get("my_id", 0)), P, C, F)
+    return State(
+        step=int(obs.get("step", 0)),
+        me=int(obs.get("player", obs.get("my_id", 0))),
+        planets=P,
+        initial_planets=IP,
+        comets_data=obs.get("comets", []),
+        fleets=F,
+        angular_velocity=float(obs.get("angular_velocity", 0.0))
+    )
 
 
 if __name__ == "__main__":

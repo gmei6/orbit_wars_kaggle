@@ -71,16 +71,31 @@ def resolve_combat(attackers: list[int], garrison: int) -> tuple[bool, int]:
     return False, garrison - force
 
 
-def planet_position(cx: float, cy: float, radius: float, start_angle: float, angular_velocity: float, turn: int) -> tuple[float, float]:
-    """Dynamically compute orbital (x, y). Flat angular velocity assumed until Kaggle formula is known."""
-    current_angle = start_angle + angular_velocity * turn
-    return (cx + radius * math.cos(current_angle), cy + radius * math.sin(current_angle))
+def planet_position(initial_x: float, initial_y: float, radius: float, angular_velocity: float, step: int) -> tuple[float, float]:
+    """Dynamically compute orbital (x, y). Matches exact kaggle engine logic."""
+    dx = initial_x - 50.0  # CENTER
+    dy = initial_y - 50.0
+    orb_r = math.hypot(dx, dy)
+    if orb_r + radius < 50.0:  # ROTATION_RADIUS_LIMIT
+        initial_angle = math.atan2(dy, dx)
+        current_angle = initial_angle + angular_velocity * step
+        return (50.0 + orb_r * math.cos(current_angle), 50.0 + orb_r * math.sin(current_angle))
+    return (initial_x, initial_y)
 
 
-def comet_position(start_x: float, start_y: float, vx: float, vy: float, turn: int, spawn_turn: int) -> tuple[float, float]:
-    """Parametric comet position. Placeholder until Kaggle orbital formula is provided."""
-    dt = max(0, turn - spawn_turn)
-    return (start_x + vx * dt, start_y + vy * dt)
+def comet_position(comet_id: int, comets_data: list, t_relative: int) -> tuple[float, float] | None:
+    """Read pre-computed comet position from env observation path array."""
+    for group in comets_data:
+        try:
+            idx = group.get("planet_ids", []).index(comet_id)
+        except ValueError:
+            continue
+        path = group.get("paths", [])[idx]
+        future_idx = group.get("path_index", 0) + t_relative
+        if 0 <= future_idx < len(path):
+            return (path[future_idx][0], path[future_idx][1])
+        return None
+    return None
 
 
 def intercept_time(src_x: float, src_y: float, target_pos_func, fleet_speed: float, max_turns: int = TOTAL_TURNS) -> int | None:
@@ -89,7 +104,10 @@ def intercept_time(src_x: float, src_y: float, target_pos_func, fleet_speed: flo
     ponytail: Iterative solver is O(T) max 500 steps. Faster and more robust than 
     analytic root-finding for arbitrary curves."""
     for t in range(1, max_turns + 1):
-        tx, ty = target_pos_func(t)
+        pos = target_pos_func(t)
+        if pos is None:
+            break  # target expired (e.g. comet vanished)
+        tx, ty = pos
         dist = math.hypot(tx - src_x, ty - src_y)
         if dist <= fleet_speed * t:
             return t
