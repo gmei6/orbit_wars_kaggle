@@ -3,6 +3,7 @@
 Project memory for Claude Code / Cowork. The contract lives in AGENTS.md; the
 two behavior skills are imported below so they are active every response.
 
+@./PROJECT_TRACKER.md
 @./AGENTS.md
 
 # Active skills

@@ -3,6 +3,7 @@
 Context for Google Antigravity / Gemini CLI. The contract lives in AGENTS.md;
 the two behavior skills are imported below so they load every session.
 
+@./PROJECT_TRACKER.md
 @./AGENTS.md
 @./github-steals/ponytail-skills/skills/ponytail/SKILL.md
 @./github-steals/caveman/skills/caveman/SKILL.md

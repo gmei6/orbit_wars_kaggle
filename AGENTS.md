@@ -21,7 +21,7 @@ custom review prompt.
 
 ## Knowledge layer (OKF v0.1)
 
-Read [`docs/index.md`](docs/index.md) first. Before answering architecture or
+Read [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md) first to align with current session goals. Then read [`docs/index.md`](docs/index.md). Before answering architecture or
 implementation questions, open the relevant module doc under
 [`docs/architecture/`](docs/architecture/) and ground claims in its `resource:`
 path before grepping code. Hard constraints live in
