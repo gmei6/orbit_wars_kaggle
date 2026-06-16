@@ -119,6 +119,26 @@ def intercept_angle(src_x: float, src_y: float, tx: float, ty: float) -> float:
     return math.atan2(ty - src_y, tx - src_x)
 
 
+def predict_fleet_target(fx: float, fy: float, fships: int, fangle: float, targets: dict, max_turns: int = TOTAL_TURNS) -> tuple[int, int] | None:
+    """Predict which target a fleet will hit, and at what turn.
+    targets: dict mapping target_id -> (target_func, radius)
+    Returns (target_id, turn) or None.
+    ponytail: O(T * N) forward simulation. Fast enough for python."""
+    speed = fleet_speed(fships)
+    vx = speed * math.cos(fangle)
+    vy = speed * math.sin(fangle)
+    for t in range(1, max_turns + 1):
+        cx = fx + vx * t
+        cy = fy + vy * t
+        for tid, (tfunc, rad) in targets.items():
+            pos = tfunc(t)
+            if pos is None:
+                continue
+            if math.hypot(pos[0] - cx, pos[1] - cy) <= rad:
+                return tid, t
+    return None
+
+
 if __name__ == "__main__":
     assert fleet_speed(1) == 1.0
     assert abs(fleet_speed(1000) - MAX_SPEED) < 1e-12

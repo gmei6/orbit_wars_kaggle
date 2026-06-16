@@ -17,11 +17,14 @@ except Exception:  # ponytail: stdlib fallback, still deterministic per seed
 
 def _start(rng):
     """Two mirrored home planets + two neutrals, all clear of the sun."""
+    planets = [[0, 0, 15.0, 15.0, 1.0, 30, 3],
+               [1, 1, 85.0, 85.0, 1.0, 30, 3],
+               [2, -1, 15.0, 85.0, 1.0, 10, 2],
+               [3, -1, 85.0, 15.0, 1.0, 10, 2]]
     return {"turn": 0, "comets": [], "fleets": [],
-            "planets": [[0, 0, 15.0, 15.0, 1.0, 30, 3],
-                        [1, 1, 85.0, 85.0, 1.0, 30, 3],
-                        [2, -1, 15.0, 85.0, 1.0, 10, 2],
-                        [3, -1, 85.0, 15.0, 1.0, 10, 2]]}
+            "planets": [list(p) for p in planets],
+            "initial_planets": [list(p) for p in planets]}
+
 
 
 def _obs(world, me):
