@@ -71,6 +71,36 @@ def resolve_combat(attackers: list[int], garrison: int) -> tuple[bool, int]:
     return False, garrison - force
 
 
+def planet_position(cx: float, cy: float, radius: float, start_angle: float, angular_velocity: float, turn: int) -> tuple[float, float]:
+    """Dynamically compute orbital (x, y). Flat angular velocity assumed until Kaggle formula is known."""
+    current_angle = start_angle + angular_velocity * turn
+    return (cx + radius * math.cos(current_angle), cy + radius * math.sin(current_angle))
+
+
+def comet_position(start_x: float, start_y: float, vx: float, vy: float, turn: int, spawn_turn: int) -> tuple[float, float]:
+    """Parametric comet position. Placeholder until Kaggle orbital formula is provided."""
+    dt = max(0, turn - spawn_turn)
+    return (start_x + vx * dt, start_y + vy * dt)
+
+
+def intercept_time(src_x: float, src_y: float, target_pos_func, fleet_speed: float, max_turns: int = TOTAL_TURNS) -> int | None:
+    """Find earliest turn t where a fleet can reach the target's position at t.
+    target_pos_func(t) returns (x, y) of the target at relative turn t.
+    ponytail: Iterative solver is O(T) max 500 steps. Faster and more robust than 
+    analytic root-finding for arbitrary curves."""
+    for t in range(1, max_turns + 1):
+        tx, ty = target_pos_func(t)
+        dist = math.hypot(tx - src_x, ty - src_y)
+        if dist <= fleet_speed * t:
+            return t
+    return None
+
+
+def intercept_angle(src_x: float, src_y: float, tx: float, ty: float) -> float:
+    """Launch angle to intercept point."""
+    return math.atan2(ty - src_y, tx - src_x)
+
+
 if __name__ == "__main__":
     assert fleet_speed(1) == 1.0
     assert abs(fleet_speed(1000) - MAX_SPEED) < 1e-12
