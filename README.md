@@ -1,57 +1,38 @@
-# Reusable Coding / Math Workspace Template
+# Orbit Wars Kaggle Agent
 
-A general-purpose starting point for coding and quantitative work, built from
-three real pieces:
+Agent implementation for the Orbit Wars Kaggle competition. Uses greedy targeting (`v0`), strict oracle/physics separation, and Open Knowledge Format (OKF) documentation.
 
-- **[ponytail](https://github.com/DietrichGebert/ponytail)** — the "laziest
-  senior dev" skill; governs *what you build* (minimal, stdlib-first, YAGNI).
-- **[caveman](https://github.com/JuliusBrussee/caveman)** — token-compression
-  skill; governs *how you talk* (terse, full accuracy).
-- **[OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)**
-  — Google Cloud's Open Knowledge Format; the `docs/` folder is an OKF bundle
-  (Markdown + YAML frontmatter) the agent reads before touching code.
+## Architecture
 
-## Layout
+- **`src/`**: Kaggle entry point, simulation engine, and game logic.
+  - `agent.py`: Entry point; wires parsing to policy.
+  - `physics.py`: The oracle. Frozen game math (speed, sun collision, capture logic). No strategy.
+  - `targeting.py` & `strategy.py`: `v0` greedy target selection and fleet sizing against arrival garrisons.
+  - `state.py`: Raw observation parser.
+  - `sim.py`: Local seeded self-play engine.
+- **`docs/`**: OKF v0.1 knowledge bundle. Read `docs/architecture/index.md` for the module map.
+- **`tests/` & `addons/quant/`**: Tests and frozen baselines (`baselines.json`) to prevent physics/oracle drift.
 
+## Environment & Skills
+
+This repo uses two behavior skills imported via `AGENTS.md` / `GEMINI.md`:
+- **[ponytail](https://github.com/DietrichGebert/ponytail)** — lazy, stdlib-first, minimum code that works.
+- **[caveman](https://github.com/JuliusBrussee/caveman)** — terse, token-compressed prose.
+
+## Testing
+
+Run tests to ensure physics matches Kaggle baselines:
+```bash
+python -m unittest tests/test_physics.py
 ```
-AGENTS.md / CLAUDE.md / GEMINI.md   # agent entry points (import the skills)
-docs/                               # OKF v0.1 knowledge bundle
-  index.md                          # bundle root (only place okf_version lives)
-  workflow.md  conventions.md       # operating loop + hard constraints
-  architecture/                     # one doc per module, bound to a code path
-github-steals/                      # the real ponytail + caveman skills (vendored)
-addons/quant/                       # OPTIONAL numeric add-on (seeding + oracle)
-scripts/check_okf.py                # OKF conformance checker
+
+Run local self-play:
+```bash
+python src/sim.py
 ```
 
-## How each tool loads it
+## Next Steps (`v1`)
 
-- **Claude Code / Cowork** reads `CLAUDE.md`, which `@`-imports ponytail and
-  caveman so they're active every response.
-- **Google Antigravity / Gemini CLI** reads `GEMINI.md`, same imports.
-- **Other agents**: `npx skills add JuliusBrussee/caveman` /
-  `npx skills add DietrichGebert/ponytail`.
-
-The skills are *referenced*, not duplicated — you get upstream updates and the
-tuned intensity levels (`/ponytail lite|full|ultra`, `/caveman …`) for free.
-
-## Reusing the template
-
-1. Copy this folder per project.
-2. Add a module doc under `docs/architecture/` (copy `_module-template.md`) for
-   each real module; set its `resource:` to the code path.
-3. Keep code general. The `addons/quant/` folder (deterministic seeding, oracle
-   baselines) is opt-in — delete it for non-numeric projects.
-4. Run `python scripts/check_okf.py docs` before committing knowledge changes.
-
-## What changed from the first draft
-
-- `project.yaml` deprecated (it's not part of OKF) — left as a tombstone you
-  can delete. Version now lives only in `docs/index.md` frontmatter (spec §11),
-  and every concept doc carries the required `type` field (spec §9).
-- Folder fixed to `.agents/` (plural) for Antigravity; the singular `.agent/`
-  is not discovered.
-- ponytail/caveman are imported from `github-steals/`, not paraphrased into
-  hand-written files.
-- The C++/JAX/GARCH specifics were moved out of the base into the optional
-  `addons/quant/` so the template stays reusable for general coding and math.
+- Comet interception for production boosts.
+- Defense / garrison retention against incoming fleets.
+- Multi-planet cooperative attacks.
