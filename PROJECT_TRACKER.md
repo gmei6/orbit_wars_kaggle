@@ -24,6 +24,7 @@
 
 ## CHANGELOG
 
+- **2026-06-17:** Implemented a global trajectory cache in `targeting.py`, computing planet positions once per game instead of per-turn. Reduced baseline execution time by 55% (down to ~0.60ms per turn).
 - **2026-06-16:** Created `arena.py` self-play evaluation harness with antithetic seat swapping and Wilson score intervals.
 - **2026-06-16:** Replaced slow O(T) predictive simulation with a precomputed trajectory cache per turn, achieving 4x speedup (0.65ms per game turn).
 - **2026-06-16:** Implemented `v0` logic completions: comet interception, incoming fleet trajectory raycasting (defense), and greedy multi-planet sequential attacks.

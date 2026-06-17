@@ -13,27 +13,45 @@ def angle_to(src: Planet, dst: Planet) -> float:
     return math.atan2(dst.y - src.y, dst.x - src.x)
 
 
+_GLOBAL_TRAJECTORY_CACHE = {}
+_LAST_GAME_ID = None
+
 def plan(state: State):
     """Return [[source_id, angle, ships], ...]. For each owned planet with a
     surplus, attack the best reachable target it can afford; skip any whose
     straight path crosses the sun.
     ponytail: transit estimated at full-garrison speed (sending more = faster =
     fewer defenders), so the estimate is conservative. Refine if it matters."""
+    global _GLOBAL_TRAJECTORY_CACHE, _LAST_GAME_ID
+    
     cmds = []
     comet_ids = {pid for group in state.comets_data for pid in group.get("planet_ids", [])}
 
     MAX_PRECOMPUTE = 150
+    
+    # Precompute regular planets globally per game
+    # initial_planets dict values are Planet objects; we hash their id and positions
+    game_id = hash(tuple(sorted((p.id, p.x, p.y) for p in state.initial_planets.values())))
+    if game_id != _LAST_GAME_ID:
+        _GLOBAL_TRAJECTORY_CACHE.clear()
+        _LAST_GAME_ID = game_id
+        for pid, p in state.initial_planets.items():
+            # Precompute enough absolute turns (500 max turns + 150 lookahead)
+            _GLOBAL_TRAJECTORY_CACHE[pid] = [
+                planet_position(p.x, p.y, p.radius, state.angular_velocity, t)
+                for t in range(650)
+            ]
+
     trajectory_cache = {}
     for p in state.planets:
-        trajectory_cache[p.id] = []
         if p.id in comet_ids:
-            for t in range(1, MAX_PRECOMPUTE + 1):
-                trajectory_cache[p.id].append(comet_position(p.id, state.comets_data, t))
+            trajectory_cache[p.id] = [
+                comet_position(p.id, state.comets_data, t)
+                for t in range(1, MAX_PRECOMPUTE + 1)
+            ]
         else:
-            initial = state.initial_planets.get(p.id)
-            if initial:
-                for t in range(1, MAX_PRECOMPUTE + 1):
-                    trajectory_cache[p.id].append(planet_position(initial.x, initial.y, p.radius, state.angular_velocity, state.step + t))
+            if p.id in _GLOBAL_TRAJECTORY_CACHE:
+                trajectory_cache[p.id] = _GLOBAL_TRAJECTORY_CACHE[p.id][state.step + 1 : state.step + 1 + MAX_PRECOMPUTE]
             else:
                 trajectory_cache[p.id] = [None] * MAX_PRECOMPUTE
 
@@ -63,41 +81,57 @@ def plan(state: State):
     # 4. Multi-planet greedy attacks
     enemy_targets = {p.id: lambda t, tid=p.id: get_pos(tid, t) for p in state.targets()}
 
-    target_list = sorted(state.targets(), key=lambda p: p.production, reverse=True)
+    def score_target(dst):
+        prod = dst.production
+        if dst.id in comet_ids:
+            prod *= 2.5  # Heavy comet priority
+        if state.step < 100 and dst.owner == -1:
+            prod *= 1.5  # Early rush
+        return prod
+
+    target_list = sorted(state.targets(), key=score_target, reverse=True)
 
     for dst in target_list:
         tfunc = enemy_targets[dst.id]
         
-        my_planets = sorted([p for p in state.mine() if available[p.id] > 0], 
-                            key=lambda p: math.hypot(p.x - dst.x, p.y - dst.y))
-        
-        accumulated = 0
-        contributors = []
-        max_turns = 0
-        
-        for src in my_planets:
-            garrison = available[src.id]
-            speed = 1.0 + (6.0 - 1.0) * (math.log(max(1, garrison)) / math.log(1000.0)) ** 1.5 if garrison > 0 else 1.0
-            speed = min(6.0, speed)
-            turns = intercept_time(src.x, src.y, tfunc, speed, max_turns=MAX_PRECOMPUTE)
-            if turns is None:
-                continue
+        for delta_t in range(1, MAX_PRECOMPUTE + 1):
+            pos = tfunc(delta_t)
+            if pos is None:
+                break
+            tx, ty = pos
             
-            tx, ty = tfunc(turns)
-            if hits_sun(src.x, src.y, tx, ty):
-                continue
+            need = required_to_capture(dst.ships, dst.production, delta_t)
+            
+            contributors = []
+            accumulated = 0
+            
+            my_planets = sorted([p for p in state.mine() if available[p.id] > 0], 
+                                key=lambda p: math.hypot(p.x - tx, p.y - ty))
+                                
+            for src in my_planets:
+                garrison = available[src.id]
+                speed = 1.0 + (6.0 - 1.0) * (math.log(max(1, garrison)) / math.log(1000.0)) ** 1.5 if garrison > 0 else 1.0
+                speed = min(6.0, speed)
                 
-            max_turns = max(max_turns, turns)
-            accumulated += garrison
-            contributors.append((src, turns, tx, ty))
-            
-            need = required_to_capture(dst.ships, dst.production, max_turns)
+                dist = math.hypot(tx - src.x, ty - src.y)
+                travel_dist = max(0.0, dist - dst.radius)
+                tt = math.ceil(travel_dist / speed)
+                
+                if tt <= delta_t:
+                    if not hits_sun(src.x, src.y, tx, ty):
+                        delay = delta_t - tt
+                        contributors.append((src, delay, tx, ty))
+                        accumulated += garrison
+                        if accumulated >= need:
+                            break
+                            
             if accumulated >= need:
                 remaining_need = need
-                for c_src, c_turns, c_tx, c_ty in contributors:
+                for c_src, delay, c_tx, c_ty in contributors:
                     send = min(available[c_src.id], remaining_need)
                     if send > 0:
-                        cmds.append([c_src.id, math.atan2(c_ty - c_src.y, c_tx - c_src.x), send])
+                        if delay == 0:
+                            cmds.append([c_src.id, math.atan2(c_ty - c_src.y, c_tx - c_src.x), send])
                         available[c_src.id] -= send
                         remaining_need -= send
                 break
