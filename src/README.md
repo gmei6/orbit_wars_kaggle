@@ -30,10 +30,10 @@ graph TD
     StateNode1 --> Strategy
 
     subgraph Targeting Logic
-        GTC["Global Trajectory Caching"]
-        DRP["Defense Reserve Prediction"]
-        TS["Target Scoring"]
-        SFA["Synchronized Fleet Arrivals"]
+        GTC["Global Trajectory Caching (targeting.py)"]
+        DRP["Defense Reserve Prediction (targeting.py)"]
+        TS["Target Scoring (targeting.py)"]
+        SFA["Synchronized Fleet Arrivals (targeting.py)"]
     end
 
     Target --> GTC
@@ -41,12 +41,12 @@ graph TD
     Target --> TS
     Target --> SFA
 
-    CmdGen["Command Generation"]
+    CmdGen["Command Generation (targeting.py)"]
     Target --> CmdGen
 
-    Phys1["planet_position"]
-    Phys2["predict_fleet_target"]
-    Phys3["hits_sun"]
+    Phys1["planet_position (physics.py)"]
+    Phys2["predict_fleet_target (physics.py)"]
+    Phys3["hits_sun (physics.py)"]
 
     GTC --> Phys1
     DRP --> Phys2
@@ -78,8 +78,8 @@ sequenceDiagram
 
 ## Module Responsibilities
 
-- **`agent.py`**: The interface for the Kaggle environment. Wires the parser to the strategy.
-- **`state.py`**: Typed data structures (`State`, `Planet`, `Fleet`, `Comet`) and observation parsing.
-- **`strategy.py`**: Per-turn policy interface. Currently acts as a pass-through to `targeting.py`.
-- **`targeting.py`**: The core AI logic (ROI targeting, defensive reserves, and synchronized launch delays).
-- **`physics.py`**: Exact extraction of the Kaggle environment's continuous math, used for predictive raycasting, line-of-sight checks, and trajectory generation.
+- **`agent.py`**: The interface for the Kaggle environment. Wires the parser to the strategy. (Covers `Agent` node).
+- **`state.py`**: Typed data structures (`State`, `Planet`, `Fleet`, `Comet`) and observation parsing. (Covers `StateParse` and `StateNode` nodes).
+- **`strategy.py`**: Per-turn policy interface. Currently acts as a pass-through to `targeting.py`. (Covers `Strategy` node).
+- **`targeting.py`**: The core AI logic (ROI targeting, defensive reserves, and synchronized launch delays). (Covers `Target`, `GTC`, `DRP`, `TS`, `SFA`, and `CmdGen` nodes).
+- **`physics.py`**: Exact extraction of the Kaggle environment's continuous math, used for predictive raycasting, line-of-sight checks, and trajectory generation. (Covers `Phys1`, `Phys2`, and `Phys3` nodes).

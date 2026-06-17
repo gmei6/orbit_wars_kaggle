@@ -63,19 +63,20 @@ def plan(state: State):
     # 1. Build target functions for our planets for defense prediction
     my_targets = {p.id: (lambda t, tid=p.id: get_pos(tid, t), p.radius) for p in state.mine()}
 
-    # 2. Compute incoming enemy attacks
-    incoming_attacks = {p.id: 0 for p in state.mine()}
+    # 2. Compute incoming enemy attacks and annotate planet state
+    planet_by_id = {p.id: p for p in state.planets}
     for f in state.fleets:
         if f.owner != state.me:
             pred = predict_fleet_target(f.x, f.y, f.ships, f.angle, my_targets, max_turns=MAX_PRECOMPUTE)
             if pred is not None:
                 tid, turns = pred
-                incoming_attacks[tid] += f.ships
+                if tid in planet_by_id:
+                    planet_by_id[tid].incoming_enemy_ships += f.ships
 
     # 3. Available garrisons (deducting defense reserve)
     available = {}
     for src in state.mine():
-        reserve = incoming_attacks[src.id]
+        reserve = src.incoming_enemy_ships
         available[src.id] = max(0, src.ships - reserve)
 
     # 4. Multi-planet greedy attacks
