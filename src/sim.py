@@ -9,7 +9,7 @@ from .physics import fleet_speed, hits_sun, seg_within, resolve_combat
 
 try:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "addons", "quant"))
-    from seeding import get_rng
+    from seeding import get_rng  # type: ignore
 except Exception:  # ponytail: stdlib fallback, still deterministic per seed
     import random
     def get_rng(seed=0): return random.Random(seed)
