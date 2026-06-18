@@ -2,9 +2,9 @@
 from __future__ import annotations
 import math
 
-from v1_1.state import State
-from v1_1.timeline import PlanetTimeline
-from v1_1.physics import travel_time, lane_clear
+from v2_macro.state import State
+from v2_macro.timeline import PlanetTimeline
+from v2_macro.physics import travel_time, lane_clear
 
 def max_arriving_force(target_id: int, target_pos: tuple[float, float], side: int, T: int, state: State, timelines: dict[int, PlanetTimeline]) -> int:
     """Calculates the max ships `side` can land on `target` EXACTLY at turn `T`."""
@@ -45,19 +45,13 @@ def reachable(target_id: int, side: int, state: State, timelines: dict[int, Plan
     Returns (earliest_turn, max_force_at_that_turn) where max_force is considered 'credible'.
     Credible force is defined conservatively as max(target_garrison, opponent_total_ships).
     """
-    # Opponent total ships (at t=0, conservative upper bound)
-    opponent_total_ships = sum(
-        timelines[p.id].garrison_at(0) 
-        for p in state.planets if timelines[p.id].owner_at(0) != side and timelines[p.id].owner_at(0) >= 0
-    )
-    
     for T in range(1, max_turns + 1):
         pos = trajectory_cache[target_id][T - 1]
         if pos is None:
             continue
             
         target_garrison = timelines[target_id].garrison_at(T)
-        credible_threshold = max(target_garrison, opponent_total_ships)
+        credible_threshold = target_garrison
         
         force = max_arriving_force(target_id, pos, side, T, state, timelines)
         if force > credible_threshold:  # greater than, since ties mean no capture

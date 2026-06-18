@@ -2,7 +2,7 @@
 type: Readme
 ---
 
-# Orbit Wars Agent — v1_1 (active development)
+# Orbit Wars Agent — v2_macro
 
 > **Active development copy.** Macro changes happen here. The frozen baseline is
 > [`../v1/`](../v1/); the two diverge here via the v2 Information Model.
@@ -14,7 +14,7 @@ limits.
 
 ## Architecture (v2 Information Model)
 
-v1_1 implements the v2 Information Model. Instead of a monolithic `targeting.py`, it separates forecasting (`timeline.py`), strategic valuation (`economy.py`), and reachability races (`reachability.py`).
+v2_macro implements the v2 Information Model. Instead of a monolithic `targeting.py`, it separates forecasting (`timeline.py`), strategic valuation (`economy.py`), and reachability races (`reachability.py`).
 
 ```mermaid
 graph TD

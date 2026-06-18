@@ -1,9 +1,9 @@
 """Macroeconomic forecasting and target valuation (Stage 4)."""
 from __future__ import annotations
 
-from v1_1.state import State
-from v1_1.timeline import PlanetTimeline
-from v1_1.reachability import reachable
+from v2_macro.state import State
+from v2_macro.timeline import PlanetTimeline
+from v2_macro.reachability import reachable
 
 def production_integral(side: int, timelines: dict[int, PlanetTimeline], max_turns: int = 500, current_turn: int = 0) -> int:
     """
@@ -31,8 +31,8 @@ def capture_cost(P_id: int, side: int, timelines: dict[int, PlanetTimeline]) -> 
 def value(P_id: int, side: int, state: State, timelines: dict[int, PlanetTimeline], trajectory_cache: dict, reachable_cache: dict) -> float:
     """
     Evaluates the Return on Investment (ROI) for capturing planet P.
-    Base formula: value(P) ~= production(P) * hold_probability(P) - capture_cost(P)
-    We use ROI (production / cost) as recommended.
+    Base formula: Profit = production * (remaining_turns - travel_time) - capture_cost
+    Rate of return = Profit / travel_time
     """
     timeline = timelines[P_id]
     
@@ -40,7 +40,27 @@ def value(P_id: int, side: int, state: State, timelines: dict[int, PlanetTimelin
     if cost == 0:
         cost = 1 # Avoid division by zero
         
-    roi = timeline.production / float(cost)
+    my_planets = [p for p in state.planets if p.owner == side]
+    if not my_planets:
+        return 0.0
+        
+    target_p = state.initial_planets[P_id]
+    
+    # Estimate minimum travel time T to target from our closest planet
+    import math
+    min_T = float('inf')
+    for src in my_planets:
+        if src.id == P_id: continue
+        dist = math.hypot(src.x - target_p.x, src.y - target_p.y)
+        min_T = min(min_T, dist)
+        
+    T = max(1.0, min_T) # Prevent division by zero
+    R = 500 - state.step
+    
+    profit = timeline.production * max(0, R - T) - cost
+    roi = profit / T
+    if roi <= 0:
+        return 0.0
     
     enemy_side = 1 if side == 2 else 2
     
@@ -57,10 +77,10 @@ def value(P_id: int, side: int, state: State, timelines: dict[int, PlanetTimelin
     
     hold_multiplier = 1.0
     if t_enemy and (not t_me or t_enemy < t_me):
-        # Enemy can reach it faster -> hard to hold
-        hold_multiplier = 0.1
+        # Enemy can reach it faster. It is risky, but giving up guarantees a macro loss.
+        hold_multiplier = 0.5
     elif t_me and (not t_enemy or t_me <= t_enemy):
         # We reach it faster or at same time -> easy to hold
         hold_multiplier = 1.5
         
-    return roi * hold_multiplier
+    return float(roi * hold_multiplier)

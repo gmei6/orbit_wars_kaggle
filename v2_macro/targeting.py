@@ -62,4 +62,3 @@ def calculate_attack_options(state: State, target: Planet, delta_t: int, traject
     tx, ty = pos
     need = required_to_capture(target.ships, target.production, delta_t)
     return need, (tx, ty)
-

@@ -104,23 +104,23 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
   - **Stage 2 Complete:** Travel/intercept math consolidated into `v1_1/physics.py`, eliminating duplicates in `targeting.py`. Precomputed distance table added for rigid-body inner planet co-rotation and stationary outer planets.
   - **Stage 3 Complete:** Implemented reachability race logic (`v1_1/reachability.py`). Added `reachable(P, side)` which iterates backwards to find maximum force arriving at any given turn, defining "credible" conservatively as defeating the garrison and exceeding the opponent's total uncommitted fleet size. Validated with `tests/test_v1_1_reachability.py`.
   - **Stage 4 Complete:** Created `v1_1/economy.py` with `production_integral` for macro-forecasting and `value(P)` for target valuation based on ROI (production / cost). Included a `reachable_cache` to mitigate $O(P^2 \times T)$ performance risks. Verified with `tests/test_v1_1_economy.py`. Watchlist established in `/docs/watchlist`.
-  - **Stage 5 Complete:** Rewrote `v1_1/strategy.py` to use the v2 information model. Implemented "capital unfreezing" by calculating safe `min_garrison` from the timeline, added ROI-based target valuation, and logic to evacuate unholdable planets. Benchmarks show a 100% win rate against the baseline `v1` strategy. However, it still loses 0-10 against `Producer Lite`, indicating fundamental tuning or threshold issues remain.
+  - **Stage 5 Complete:** Rewrote `v1_1/strategy.py` to use the v2 information model. Implemented "capital unfreezing" by calculating safe `min_garrison` from the timeline, added ROI-based target valuation, and logic to evacuate unholdable planets.
+  - **Stage 5 Patch (Piecemeal Defeat & Expansion):** Added `RESERVATIONS` to `strategy.py` to persist synchronized delays across turns, and injected them into the timeline to prevent double-counting. Relaxed reachability race logic so the agent takes strategic risks rather than ceding the board. Achieved rapid early game expansion parity, but still loses 0-20 to Producer Lite (-4163 margin) due to later game scaling/target-selection issues.
 
 ---
 
 ## §8 — Open Questions & Blockers 🟢 *(overwrite each session)*
 
 - **Blockers:** None currently.
-- **Q1 (Strategy):** Why exactly does `Producer Lite` defeat `v1_1`? We need to pinpoint the flaw in our attacks or defense tuning.
+- **Q1 (Strategy):** Why exactly does `Producer Lite` defeat `v2_macro`? We achieved early game expansion parity (Turn 50: 7 planets vs 13 planets), but Producer Lite's scaling is drastically higher (Turn 150: 5000+ ships). Does Producer Lite prioritize comets or specific geometry?
 - **Q2 (Engine):** Same-owner co-arrival rule is RESOLVED (fleets stack).
-- **Open Qs:** Threshold tuning for reachability race (time-margin and force-ratio).
 
 ---
 
 ## §9 — Next Actions 🟢 *(overwrite each session)
 
-1. Investigate and debug the loss to `Producer Lite` (why is our economy failing against it?).
-2. Tune reachability thresholds via arena Wilson intervals (Stage 6).
+1. Investigate Producer Lite's mid-game scaling (Turn 50-100). Are we ignoring comets?
+2. Implement comet-specific valuation or aggressive sun-avoidance routing if needed to counter Producer Lite.
 
 ---
 
@@ -138,6 +138,8 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 - `D-008 | 2026-06-17 | V2 Information Model | Moved from per-turn dense snapshot to event-based timeline forecast. Implemented rigid-body inner planet rotation distance caching. | Replaces naive sum-based defense calculation. Frees up 'frozen capital'. | §3, §7`
 - `D-009 | 2026-06-17 | Replace naive dense state with sparse timeline. | The turn-by-turn state projection fails on flips mid-window. Timeline correctly folds chronologically ordered arrivals. Removed calculate_defense_needs and incoming_enemy_ships. | §7`
 - `D-010 | 2026-06-17 | Evaluate targets via ROI (production / cost) and cache reachability. | Prevents chasing distant, expensive targets. Caching mitigates the O(P^2 * T) complexity of reachability checks. | §7`
+- `D-011 | 2026-06-18 | Inject RESERVATIONS into predictive timelines | Delayed fleet launches for synchronized attacks were "invisible" to the agent on subsequent turns, causing it to double-book attacks on the same target. Injecting them fixes double-counting. | §7`
+- `D-012 | 2026-06-18 | Relax overly conservative reachability logic | Assuming the enemy will perfectly capture any planet they are closer to paralyzed our agent's expansion. Taking strategic risks is required for macro scale. | §7`
 
 ---
 
@@ -156,3 +158,4 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 - `S-009 | 2026-06-17 | v1.1 | Completed Stage 1 of v2 Information Model. Created timeline.py, implemented PlanetTimeline and chronological event folding. Removed obsolete state/targeting code. Passed timeline parity tests.`
 - `S-009 | 2026-06-17 | v1.1 | Authored docs/design/v2-information-model.md (written design + 6-stage plan + doctrine behind D-008); registered it in docs/index.md and synced it to Stage 0/2 results. Flagged stale index/README docs + missing root CLAUDE.md. Formalized session-start / session-wrapup as Cowork skills; rebuilt session-wrapup as a generic packaged skill.`
 - `S-010 | 2026-06-17 | v1.1 | Completed Stages 3, 4, and 5 of the v2 Information Model. Added reachability.py and economy.py. Rewrote strategy.py to use timeline-based capital unfreezing and ROI valuation. Achieved 100% win rate against v1, but 0% against Producer Lite.`
+- `S-011 | 2026-06-18 | v2_macro | Fixed piecemeal defeat and paralyzed expansion. Implemented cross-turn RESERVATIONS memory, injected reservations into predictive timelines to prevent double-counting targets, and relaxed reachability race constraints. Early game parity achieved but mid-game macro deficit persists against Producer Lite.`
