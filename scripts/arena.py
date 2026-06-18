@@ -84,9 +84,12 @@ def _resolve_spec(spec):
     file path — both are strings kaggle loads directly). Kept as an explicit
     indirection so M3 can add a parameter-injected variant here, evaluated
     inside the worker process."""
-    if spec in ("main.py", "src/agent.py", "agent.py"):
+    if spec in ("main.py", "v1/agent.py", "agent.py"):
         import importlib
-        return getattr(importlib.import_module("src.agent"), "act")
+        return getattr(importlib.import_module("v1.agent"), "act")
+    if spec == "v1_1/agent.py":
+        import importlib
+        return getattr(importlib.import_module("v1_1.agent"), "act")
     return spec
 
 

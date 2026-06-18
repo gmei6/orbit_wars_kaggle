@@ -2,7 +2,7 @@
 type: Module
 title: Physics
 description: Frozen Orbit Wars constants and formulas — the oracle the bot and simulator both obey.
-resource: src/physics.py
+resource: v1_1/physics.py
 tags: [physics, oracle, geometry, combat]
 timestamp: 2026-06-16
 ---

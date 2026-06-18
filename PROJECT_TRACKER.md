@@ -91,16 +91,14 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 
 ---
 
-## §7 — Current Status 🟢 *(overwrite each session to reflect reality)*
+## §7 — Current Status 🟢 *(overwrite each session to reflect reality)
 
-- **Phase:** v2 Planning
+- **Phase:** v2 Planning / Architecture Refactor
 - **State of the Code:** 
-  - Trajectory caching successfully dropped execution time by 55% to ~0.60ms per turn.
-  - `v1` synchronized arrivals validated. Bot intentionally delays launches from closer planets so fleets arrive simultaneously.
-  - Win-rate vs starter bot is 69% (up from 37%).
-  - New opponent `Producer Lite` integrated into `opponents/producer_lite/` for advanced `arena.py` benchmarking. `Producer Lite` is confirmed to defeat our `v1` logic.
-  - Architectural documentation added to `src/README.md` using Mermaid diagrams to visualize parsing and targeting logic.
-  - Automations added: `session-wrapup` skill to safely update tracker and lessons learned files.
+  - Benchmarked `v1` vs `Producer Lite`: 0% win-rate, proving we have a massive macroeconomic deficit (-2395 avg ships).
+  - **Major Refactor (v1_1)**: `src` folder renamed to `v1` (baseline). Duplicated to `v1_1` for active development. Cleanly separated decision-making logic from math. `targeting.py` is now purely a math oracle; `strategy.py` is the "brain".
+  - Benchmarking scripts (`arena.py`, `sim.py`) moved to a global `scripts/` folder to clean up the agent directories.
+  - `v1_1` behaves 100% identically to `v1` (verified via arena match), providing a clean slate for new macro optimizations.
 
 ---
 
@@ -111,11 +109,11 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 
 ---
 
-## §9 — Next Actions 🟢 *(overwrite each session)*
+## §9 — Next Actions 🟢 *(overwrite each session)
 
-1. Analyze `Producer Lite`'s strategy by reviewing replays and its source code.
-2. Formulate hypotheses on its strengths and our weaknesses.
-3. Begin planning `v2` optimizations to defeat `Producer Lite`.
+1. Brainstorm and implement an ROI-based target scoring system in `v1_1/strategy.py`.
+2. Overhaul defensive reserve logic to account for planet production, freeing up "frozen capital" for early expansion.
+3. Benchmark new strategy against `Producer Lite`.
 
 ---
 
@@ -127,6 +125,8 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 - `D-002 | 2026-06-16 | Implement antithetic seat swapping and Wilson score intervals in arena.py. | Ensure robust confidence metrics and eliminate starting-position bias. | §4, §6`
 - `D-003 | 2026-06-17 | Shift from greedy multi-planet attacks to Synchronized Fleet Arrivals (v1). | Greedy attacks resulted in fleets arriving sequentially, getting easily destroyed by defensive reserves. Synchronizing arrivals prevents piecemeal defeat. | §5, §6`
 - `D-004 | 2026-06-17 | Refactor PROJECT_TRACKER.md into Two-Channel Cascade Model template. | The previous tracker lacked structured governance (Frozen vs Live sections). Adopting this template enforces a single source of truth for LLM context, ensuring the North Star and architectural decisions are preserved across sessions. | All`
+- `D-005 | 2026-06-17 | Refactor v1 architecture: split Strategy and Targeting. | targeting.py was too cluttered with decision logic. Isolating the math allows us to rebuild the macro strategy cleanly in strategy.py. Created v1_1 for active dev. | §3, §7`
+- `D-006 | 2026-06-17 | Move arena.py and sim.py to scripts/. | Keep the agent directory clean by removing non-agent code. | §4`
 
 ---
 
@@ -138,3 +138,5 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 - `S-002 | 2026-06-17 | v0.1 | Integrated Producer Lite, implemented v1 synchronized arrivals, implemented Trajectory caching. Moved benchmark.py to tests/.`
 - `S-003 | 2026-06-17 | v1.0 | Project Tracker reformatted using the "Two-Channel Cascade" template structure to better track LLM context.`
 - `S-004 | 2026-06-17 | v1.0 | Deep-dived v1 synchronized fleet arrivals logic. Added Mermaid diagrams to src/README.md for state and targeting architecture. Created session-wrapup skill.`
+- `S-005 | 2026-06-17 | v1.0 | Represented incoming danger on Planet state via incoming_enemy_ships. Updated README architecture diagram to explicitly map nodes to source files.`
+- `S-006 | 2026-06-17 | v1.1 | Benchmarked v1 vs Producer Lite (0% win rate). Refactored src/ into v1/ and v1_1/. Separated math into targeting.py and decision logic into strategy.py. Moved sim/arena out to scripts/. Updated OKF docs.`

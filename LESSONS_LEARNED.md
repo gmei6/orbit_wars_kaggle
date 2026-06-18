@@ -10,7 +10,9 @@ This document tracks key insights, architectural decisions, and mistakes made du
 ## Strategy & Gameplay
 
 - **Piecemeal Attacks Fail:** Launching greedy, sequential multi-planet attacks leads to fleets arriving one by one, making them easy targets for defensive reserves. **Fix:** Implemented `v1` Synchronized Fleet Arrivals. Delaying launches from closer planets so fleets arrive simultaneously increased win-rate against the starter bot from 37% to 69%.
-- **Producer Lite Threat:** Our `v1` logic currently loses to the `Producer Lite` opponent. Synchronized attacks alone are insufficient against its strategy. Further optimization is required for `v2`.
+- **Producer Lite Threat:** Our `v1` logic currently loses to the `Producer Lite` opponent (0% win rate, -2395 average ships). Synchronized attacks alone are insufficient against its strategy.
+- **The "Shiny Object" Problem (Zero ROI Awareness):** Targeting strictly by production value ignores travel distance and enemy garrison size. It leads to fleets chasing distant, heavily defended planets while ignoring cheap, close expansions, resulting in massive economic deficits. **Fix (Planned for v1_1):** Evaluate targets based on Return On Investment (ROI).
+- **The "Frozen Capital" Problem (Over-defending):** Subtracting the entire incoming enemy fleet size from our available ships immediately ignores natural ship regeneration during the enemy's travel time. This paralyzes early expansion. **Fix (Planned for v1_1):** Defense reserves must subtract the planet's expected production before freezing ships.
 
 ## Tooling
 

@@ -5,7 +5,7 @@ ponytail: orbiting planets and comets omitted in v0 (static map); add when a
 policy depends on them."""
 from __future__ import annotations
 import math, os, sys
-from .physics import fleet_speed, hits_sun, seg_within, resolve_combat
+from v1.physics import fleet_speed, hits_sun, seg_within, resolve_combat
 
 try:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "addons", "quant"))
@@ -97,7 +97,7 @@ def run(policy_a, policy_b, turns=200, seed=0):
 
 
 if __name__ == "__main__":
-    from .agent import act
+    from v1.agent import act
     idle = lambda obs: []
     r1 = run(act, idle, turns=120, seed=7)
     r2 = run(act, idle, turns=120, seed=7)

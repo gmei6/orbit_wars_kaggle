@@ -6,8 +6,8 @@ import os
 # Ensure the root project directory is on the path so we can import src
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.sim import run
-from src.agent import act
+from scripts.sim import run
+from v1.agent import act
 
 def main():
     print("Running mirror match benchmark...")

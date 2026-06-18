@@ -1,34 +1,28 @@
 ---
 type: Module
 title: Targeting
-description: Choose targets and size attack fleets using arrival-garrison math.
-resource: src/targeting.py
-tags: [targeting, fleet-sizing]
+description: Mathematical oracle for trajectories, travel times, and defense/attack calculations.
+resource: v1_1/targeting.py
+tags: [math, oracle, calculation]
 timestamp: 2026-06-16
 ---
 
 # Responsibility
 
-For each owned planet, pick the best affordable, sun-safe target and compute the
-ships needed to capture it on arrival. Owns target selection and fleet sizing;
-defers all rules to [physics](/architecture/physics.md) and consumes typed
-[state](/architecture/state.md).
+Pure mathematical calculator. Precomputes game trajectories, calculates incoming enemy attacks (`calculate_defense_needs`), and calculates required ships/travel time for potential attacks (`calculate_attack_options`). It makes NO strategic decisions.
 
 # Interface
 
-`plan(state) -> [[source_id, angle, ships], ...]`; `angle_to(src, dst) -> radians`.
+`calculate_attack_options(state, target, delta_t)`, `calculate_defense_needs(state, cache)`.
 
 # Invariants
 
+- Pure functions with no internal decision-making.
 - Never routes a fleet whose straight path crosses the sun (`hits_sun`).
-- Sizes attacks against the *arrival* garrison, not the launch garrison
-  (travel-time blindness): `required_to_capture(ships, production, transit)`.
-- Never commands more ships than the source garrison.
-- Greedy: score = production / distance. ponytail: upgrade to real allocation
-  only if self-play shows it pays.
+- Sizes attacks against the *arrival* garrison, not the launch garrison.
 
 # Examples
 
 ```text
-plan(state) -> [[0, 0.785, 24]]   # planet 0 sends 24 ships toward 45 degrees
+calculate_attack_options(state, target_planet, 10) -> (24, (50.5, 30.2)) # Need 24 ships, expected at (50.5, 30.2)
 ```

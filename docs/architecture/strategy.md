@@ -1,17 +1,15 @@
 ---
 type: Module
 title: Strategy
-description: Per-turn policy that produces the agent's launch commands.
-resource: src/strategy.py
-tags: [policy, strategy]
+description: The primary decision-making brain: chooses targets, distributes fleets, and synchronizes arrivals.
+resource: v1_1/strategy.py
+tags: [policy, strategy, macro]
 timestamp: 2026-06-16
 ---
 
 # Responsibility
 
-Owns the turn-level policy: given a [state](/architecture/state.md), return the
-launch commands. v0 delegates to [targeting](/architecture/targeting.md); this
-is the seam where defence, comet rushes, or multi-target allocation get added.
+The true "brain" of the agent. Owns target selection, ROI scoring, defense reserve allocation, and synchronized fleet launch delays. It relies on [targeting](/architecture/targeting.md) for pure mathematical calculations.
 
 # Interface
 
@@ -20,10 +18,11 @@ is the seam where defence, comet rushes, or multi-target allocation get added.
 # Invariants
 
 - Output is exactly the action space: `[source_planet_id, angle, ships]` rows.
-- Pure function of state — no hidden turn-to-turn memory in v0.
+- Controls economy expansion rate by deciding how many ships to retain vs send.
+- Synchronizes launches to prevent piecemeal defeat.
 
 # Examples
 
 ```text
-decide(state) == plan(state)   # v0 is a thin pass-through
+decide(state) -> [[0, 0.785, 24]]   # planet 0 sends 24 ships toward 45 degrees
 ```
