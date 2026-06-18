@@ -13,6 +13,8 @@ This document tracks key insights, architectural decisions, and mistakes made du
 - **Producer Lite Threat:** Our `v1` logic currently loses to the `Producer Lite` opponent (0% win rate, -2395 average ships). Synchronized attacks alone are insufficient against its strategy.
 - **The "Shiny Object" Problem (Zero ROI Awareness):** Targeting strictly by production value ignores travel distance and enemy garrison size. It leads to fleets chasing distant, heavily defended planets while ignoring cheap, close expansions, resulting in massive economic deficits. **Fix (Planned for v1_1):** Evaluate targets based on Return On Investment (ROI).
 - **The "Frozen Capital" Problem (Over-defending):** Subtracting the entire incoming enemy fleet size from our available ships immediately ignores natural ship regeneration during the enemy's travel time. This paralyzes early expansion. **Fix (Planned for v1_1):** Defense reserves must subtract the planet's expected production before freezing ships.
+- **Same-owner Fleet Stacking:** The engine groups fleets arriving on the same turn by owner before resolving combat. This means fleets arriving simultaneously combine their force rather than being defeated sequentially, confirming our Synchronized Arrivals logic works correctly at the engine level.
+
 
 ## Tooling
 

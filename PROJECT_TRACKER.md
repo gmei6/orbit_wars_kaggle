@@ -12,7 +12,7 @@ timestamp: 2026-06-17
 > Paste this whole file into a fresh LLM conversation before working, and ask the LLM to
 > return the whole updated file at the end (see the Update Protocol).
 
-- **Last updated:** 2026-06-17 — Session 3 (Tracker refactor and v1 validations)
+- **Last updated:** 2026-06-17 — Session 4 (Stage 0: Engine Co-arrival confirmation)
 - **File version:** v1.0
 - **Owner:** Gary Mei
 
@@ -93,12 +93,13 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 
 ## §7 — Current Status 🟢 *(overwrite each session to reflect reality)
 
-- **Phase:** v2 Planning / Architecture Refactor
+- **Phase:** v2 Planning / Architecture Refactor (Stage 0 Complete)
 - **State of the Code:** 
   - Benchmarked `v1` vs `Producer Lite`: 0% win-rate, proving we have a massive macroeconomic deficit (-2395 avg ships).
   - **Major Refactor (v1_1)**: `src` folder renamed to `v1` (baseline). Duplicated to `v1_1` for active development. Cleanly separated decision-making logic from math. `targeting.py` is now purely a math oracle; `strategy.py` is the "brain".
   - Benchmarking scripts (`arena.py`, `sim.py`) moved to a global `scripts/` folder to clean up the agent directories.
   - `v1_1` behaves 100% identically to `v1` (verified via arena match), providing a clean slate for new macro optimizations.
+  - **Stage 0 Complete:** Read Kaggle engine logic and confirmed the same-owner co-arrival stacking rule. Updated `v1_1/physics.py` to mirror this logic and pinned it with `tests/test_v1_1_physics.py`.
 
 ---
 
@@ -106,14 +107,15 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 
 - **Blockers:** None currently.
 - **Q1 (Strategy):** Why exactly does `Producer Lite` defeat `v1`? Are we lacking defensive reserves, or is its economy scaling faster? We need to pinpoint the flaw in `v1`'s synchronized attacks.
+- **Q2 (Engine):** Same-owner co-arrival rule is RESOLVED (fleets stack).
 
 ---
 
 ## §9 — Next Actions 🟢 *(overwrite each session)
 
-1. Brainstorm and implement an ROI-based target scoring system in `v1_1/strategy.py`.
-2. Overhaul defensive reserve logic to account for planet production, freeing up "frozen capital" for early expansion.
-3. Benchmark new strategy against `Producer Lite`.
+1. Begin Stage 1: Build `v1_1/timeline.py` for per-planet arrivals from `state.fleets` via the intercept layer.
+2. Implement `garrison_at` / `owner_at` in the timeline to retire naive `calculate_defense_needs`.
+3. Test timeline forecast vs a vendored-engine rollout to ensure exact parity without new launches.
 
 ---
 
@@ -127,6 +129,7 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 - `D-004 | 2026-06-17 | Refactor PROJECT_TRACKER.md into Two-Channel Cascade Model template. | The previous tracker lacked structured governance (Frozen vs Live sections). Adopting this template enforces a single source of truth for LLM context, ensuring the North Star and architectural decisions are preserved across sessions. | All`
 - `D-005 | 2026-06-17 | Refactor v1 architecture: split Strategy and Targeting. | targeting.py was too cluttered with decision logic. Isolating the math allows us to rebuild the macro strategy cleanly in strategy.py. Created v1_1 for active dev. | §3, §7`
 - `D-006 | 2026-06-17 | Move arena.py and sim.py to scripts/. | Keep the agent directory clean by removing non-agent code. | §4`
+- `D-007 | 2026-06-17 | Update v1_1/physics.py resolve_combat to stack fleets by owner. | Kaggle engine interpreter groups fleets by owner before resolving combat. Updating physics allows correct calculation of synchronized multi-fleet arrivals. | §7`
 
 ---
 
@@ -140,3 +143,4 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 - `S-004 | 2026-06-17 | v1.0 | Deep-dived v1 synchronized fleet arrivals logic. Added Mermaid diagrams to src/README.md for state and targeting architecture. Created session-wrapup skill.`
 - `S-005 | 2026-06-17 | v1.0 | Represented incoming danger on Planet state via incoming_enemy_ships. Updated README architecture diagram to explicitly map nodes to source files.`
 - `S-006 | 2026-06-17 | v1.1 | Benchmarked v1 vs Producer Lite (0% win rate). Refactored src/ into v1/ and v1_1/. Separated math into targeting.py and decision logic into strategy.py. Moved sim/arena out to scripts/. Updated OKF docs.`
+- `S-007 | 2026-06-17 | v1.1 | Completed v2 Information Model Stage 0: confirmed Kaggle engine same-owner combat stacking logic. Wrote test_v1_1_physics.py to pin it.`
