@@ -102,14 +102,16 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
   - **Stage 0 Complete:** Read Kaggle engine logic and confirmed the same-owner co-arrival stacking rule. Updated `v1_1/physics.py` to mirror this logic and pinned it with `tests/test_v1_1_physics.py`.
   - **Stage 1 Complete:** Created `v1_1/timeline.py` to fold per-planet arrivals from `state.fleets` into a deterministic forecast. Retired naive `calculate_defense_needs` in `targeting.py` and `incoming_enemy_ships` in `state.py`. Verified via `tests/test_v1_1_timeline.py`.
   - **Stage 2 Complete:** Travel/intercept math consolidated into `v1_1/physics.py`, eliminating duplicates in `targeting.py`. Precomputed distance table added for rigid-body inner planet co-rotation and stationary outer planets.
-  - `v1_1` behaves 100% identically to `v1` (verified via arena match), providing a clean slate for new macro optimizations.
+  - **Stage 3 Complete:** Implemented reachability race logic (`v1_1/reachability.py`). Added `reachable(P, side)` which iterates backwards to find maximum force arriving at any given turn, defining "credible" conservatively as defeating the garrison and exceeding the opponent's total uncommitted fleet size. Validated with `tests/test_v1_1_reachability.py`.
+  - **Stage 4 Complete:** Created `v1_1/economy.py` with `production_integral` for macro-forecasting and `value(P)` for target valuation based on ROI (production / cost). Included a `reachable_cache` to mitigate $O(P^2 \times T)$ performance risks. Verified with `tests/test_v1_1_economy.py`. Watchlist established in `/docs/watchlist`.
+  - **Stage 5 Complete:** Rewrote `v1_1/strategy.py` to use the v2 information model. Implemented "capital unfreezing" by calculating safe `min_garrison` from the timeline, added ROI-based target valuation, and logic to evacuate unholdable planets. Benchmarks show a 100% win rate against the baseline `v1` strategy. However, it still loses 0-10 against `Producer Lite`, indicating fundamental tuning or threshold issues remain.
 
 ---
 
 ## §8 — Open Questions & Blockers 🟢 *(overwrite each session)*
 
 - **Blockers:** None currently.
-- **Q1 (Strategy):** Why exactly does `Producer Lite` defeat `v1`? Are we lacking defensive reserves, or is its economy scaling faster? We need to pinpoint the flaw in `v1`'s synchronized attacks.
+- **Q1 (Strategy):** Why exactly does `Producer Lite` defeat `v1_1`? We need to pinpoint the flaw in our attacks or defense tuning.
 - **Q2 (Engine):** Same-owner co-arrival rule is RESOLVED (fleets stack).
 - **Open Qs:** Threshold tuning for reachability race (time-margin and force-ratio).
 
@@ -117,9 +119,8 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 
 ## §9 — Next Actions 🟢 *(overwrite each session)
 
-1. Implement reachability race logic (`reachable(P, side)`) over the timeline and travel layers (Stage 3).
-2. Implement planet valuation and economy scoreboard tracking (Stage 4).
-3. Strategy rewrite in `v1_1/strategy.py` leveraging new structures (Stage 5).
+1. Investigate and debug the loss to `Producer Lite` (why is our economy failing against it?).
+2. Tune reachability thresholds via arena Wilson intervals (Stage 6).
 
 ---
 

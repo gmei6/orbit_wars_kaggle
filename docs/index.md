@@ -24,6 +24,10 @@ This is the only file in the bundle that carries an `okf_version` (per spec
 
 * [v2 Information Model & Strategy](/design/v2-information-model.md) - how state is stored (forecastable baseline, event timeline) plus the v2 doctrine and staged build plan
 
+# Watchlist
+
+* [Stage 4 Monitor](/watchlist/stage4_monitor.md) - elements to keep an eye on (alternative valuation options, caching)
+
 # Add-ons
 
 * [Quant / numeric add-on](/../addons/quant/index.md) - optional; keep out of general projects
