@@ -13,6 +13,7 @@ SPEED_REF_SHIPS = 1000.0   # ships at which max speed is reached
 SPEED_EXP = 1.5
 TOTAL_TURNS = 500
 COMET_SPAWN_TURNS = (50, 150, 250, 350, 450)
+ROTATION_RADIUS_LIMIT = 50.0
 
 
 def fleet_speed(ships: int) -> float:
@@ -32,6 +33,13 @@ def transit_turns(distance: float, ships: int) -> float:
     return distance / fleet_speed(ships)
 
 
+def travel_time(sx: float, sy: float, tx: float, ty: float, target_radius: float, garrison: int) -> int:
+    """Calculates how long it will take a fleet of size `garrison` to reach tx, ty from sx, sy."""
+    dist = math.hypot(tx - sx, ty - sy)
+    travel_dist = max(0.0, dist - target_radius)
+    return math.ceil(travel_dist / fleet_speed(garrison))
+
+
 def arrival_garrison(garrison: int, production: int, turns: float) -> float:
     """Defenders present on arrival — garrison grows during transit."""
     return garrison + production * turns
@@ -48,6 +56,10 @@ def seg_within(x0, y0, x1, y1, cx, cy, r) -> bool:
 
 def hits_sun(x0, y0, x1, y1, *, r: float = SUN_RADIUS) -> bool:
     return seg_within(x0, y0, x1, y1, SUN[0], SUN[1], r)
+
+
+def lane_clear(x0: float, y0: float, x1: float, y1: float) -> bool:
+    return not hits_sun(x0, y0, x1, y1)
 
 
 def required_to_capture(garrison: int, production: int, turns: float) -> int:
@@ -162,6 +174,45 @@ def predict_fleet_target(fx: float, fy: float, fships: int, fangle: float, targe
             if math.hypot(pos[0] - cx, pos[1] - cy) <= rad:
                 return tid, t
     return None
+
+
+# --- Stage 2 Distance Table ---
+_DIST_TABLE: dict[tuple[int, int], tuple[float, bool]] = {}
+
+def is_inner(x: float, y: float, radius: float) -> bool:
+    return math.hypot(x - SUN[0], y - SUN[1]) + radius < ROTATION_RADIUS_LIMIT
+
+def build_distance_table(initial_planets: dict):
+    """
+    Precomputes constant distances and lane clarity for stationary pairs.
+    Pairs are constant if is_inner(p1) == is_inner(p2).
+    """
+    global _DIST_TABLE
+    _DIST_TABLE.clear()
+    
+    p_list = list(initial_planets.values())
+    for i in range(len(p_list)):
+        for j in range(len(p_list)):
+            p1 = p_list[i]
+            p2 = p_list[j]
+            if p1.id == p2.id:
+                continue
+            if is_inner(p1.x, p1.y, p1.radius) == is_inner(p2.x, p2.y, p2.radius):
+                dist = math.hypot(p2.x - p1.x, p2.y - p1.y)
+                travel_dist = max(0.0, dist - p2.radius)
+                clear = not hits_sun(p1.x, p1.y, p2.x, p2.y)
+                _DIST_TABLE[(p1.id, p2.id)] = (travel_dist, clear)
+
+def get_distance_and_clear(p1_id: int, p2_id: int, p1_x: float, p1_y: float, p2_x: float, p2_y: float, p2_radius: float) -> tuple[float, bool]:
+    """
+    Returns (travel_dist, is_clear). Uses cache if the pair's relative distance is constant.
+    Otherwise computes it on the fly.
+    """
+    if (p1_id, p2_id) in _DIST_TABLE:
+        return _DIST_TABLE[(p1_id, p2_id)]
+    dist = math.hypot(p2_x - p1_x, p2_y - p1_y)
+    travel_dist = max(0.0, dist - p2_radius)
+    return travel_dist, not hits_sun(p1_x, p1_y, p2_x, p2_y)
 
 
 if __name__ == "__main__":
