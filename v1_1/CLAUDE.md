@@ -1,3 +1,7 @@
+---
+type: Configuration
+---
+
 # CLAUDE.md
 
 Project memory for Claude Code / Cowork. The contract lives in AGENTS.md; the

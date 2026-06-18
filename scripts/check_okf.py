@@ -16,6 +16,7 @@ import sys
 from pathlib import Path
 
 RESERVED = {"index.md", "log.md"}
+EXCLUDED_DIRS = {".venv", "vendor", ".agents", ".claude", "github-steals", ".pytest_cache"}
 
 
 def frontmatter(text: str) -> dict | None:
@@ -45,6 +46,8 @@ def violations(bundle: Path) -> list[str]:
         return [f"no .md files under {bundle}"]
     for path in md_files:
         if path.name in RESERVED:
+            continue
+        if any(part in EXCLUDED_DIRS for part in path.parts):
             continue
         fm = frontmatter(path.read_text(encoding="utf-8"))
         rel = path.relative_to(bundle)

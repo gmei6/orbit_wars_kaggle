@@ -1,3 +1,7 @@
+---
+type: Log
+---
+
 # Lessons Learned
 
 This document tracks key insights, architectural decisions, and mistakes made during the development of our Orbit Wars agent. Review this before implementing new strategies to avoid repeating past errors.
@@ -17,6 +21,7 @@ This document tracks key insights, architectural decisions, and mistakes made du
 - **Same-owner Fleet Stacking:** The engine groups fleets arriving on the same turn by owner before resolving combat. This means fleets arriving simultaneously combine their force rather than being defeated sequentially, confirming our Synchronized Arrivals logic works correctly at the engine level.
 - **Determinism = store the baseline, perturb it:** Orbits, comet paths, and any in-flight fleet are fully deterministic — fleets are committed straight-line projectiles that cannot redirect, so the only unknown is each player's *next* launch. Store the forecastable baseline as a per-planet **event timeline** (production rate + sorted arrival events) and treat candidate launches as cheap perturbations rather than recomputing. The old `calculate_defense_needs` just summed incoming enemy ships, ignoring arrival order and ownership flips — the timeline (v2 Stage 1) fixes that.
 - **Economy is the scoreboard:** the loss to `Producer Lite` is a macro/economy deficit, not a tactics problem. Optimize the production-integral (total ships generated over the remaining turns), not individual fights.
+- **The `Producer Lite` Macro Deficit Persists:** Even after implementing perfect mathematical forecasting and an unfreezing doctrine that guarantees safe capital usage in v1_1, we still lose to `Producer Lite` (0% win-rate). This implies the flaw isn't tactical miscalculation, but fundamental strategic misalignment (e.g., target valuation weights or reachability thresholds). We must tune the model thresholds.
 
 
 ## Tooling

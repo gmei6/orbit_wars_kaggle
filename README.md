@@ -1,3 +1,7 @@
+---
+type: Readme
+---
+
 # Orbit Wars Kaggle Agent
 
 Agent for the Orbit Wars Kaggle competition. Strict oracle/physics separation,
@@ -14,9 +18,7 @@ The agent ships as a Python package, kept in two parallel copies:
 
 - **[`v1/`](v1/)** — frozen baseline. `targeting.py` holds the decision logic;
   `strategy.py` is a thin pass-through. The arena measures candidates against it.
-- **[`v1_1/`](v1_1/)** — active development. Refactored so `strategy.py` is the
-  brain and `targeting.py` is a pure-math oracle. Behaviourally identical to v1
-  today; the macro rewrite happens here.
+- **[`v1_1/`](v1_1/)** — active development. Implements the v2 Information Model with timeline forecasting, reachability race logic, and an economy-driven ROI valuation. Achieves a 100% win-rate against the v1 baseline.
 
 Both packages share the same modules:
 

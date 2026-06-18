@@ -1,3 +1,7 @@
+---
+type: Contract
+---
+
 # Agent Operating Contract
 
 This workspace pairs two behavior skills with an OKF knowledge layer. The

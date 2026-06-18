@@ -1,3 +1,7 @@
+---
+type: Readme
+---
+
 # Orbit Wars Agent — v1 (frozen baseline)
 
 > **Frozen baseline.** Don't edit this to chase new behaviour — the arena

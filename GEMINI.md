@@ -1,3 +1,7 @@
+---
+type: Configuration
+---
+
 # GEMINI.md
 
 Context for Google Antigravity / Gemini CLI. The contract lives in AGENTS.md;
