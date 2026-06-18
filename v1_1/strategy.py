@@ -6,10 +6,9 @@ from .targeting import (
     get_trajectory_cache, 
     calculate_defense_needs, 
     calculate_attack_options,
-    get_travel_time,
-    is_path_clear,
     MAX_PRECOMPUTE
 )
+from .physics import travel_time, lane_clear
 
 def decide(state: State):
     cmds = []
@@ -54,10 +53,10 @@ def decide(state: State):
                                 
             for src in my_planets:
                 garrison = available[src.id]
-                tt = get_travel_time(src, tx, ty, dst.radius, garrison)
+                tt = travel_time(src.x, src.y, tx, ty, dst.radius, garrison)
                 
                 if tt <= delta_t:
-                    if is_path_clear(src, tx, ty):
+                    if lane_clear(src.x, src.y, tx, ty):
                         delay = delta_t - tt
                         contributors.append((src, delay, tx, ty))
                         accumulated += garrison

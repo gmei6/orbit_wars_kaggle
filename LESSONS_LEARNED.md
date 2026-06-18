@@ -6,6 +6,7 @@ This document tracks key insights, architectural decisions, and mistakes made du
 
 - **Trajectory Computation is Expensive:** O(T) predictive simulations are too slow for real-time turn limits. **Fix:** Precompute trajectories and cache them per-turn. This optimization reduced turn execution time from >1.5ms to ~0.60ms.
 - **Environment Emulation:** Relying solely on Kaggle's remote environment slows down iteration. **Fix:** We vendored a local version of the Kaggle `orbit_wars` physics engine and created `arena.py` for rapid self-play benchmarking.
+- **Rigid Body Rotation:** Inner planets rotate at a shared angular velocity, maintaining constant relative distances over time. We can precompute and cache their travel times to avoid per-turn dynamic intercept math for inner-inner pairs.
 
 ## Strategy & Gameplay
 

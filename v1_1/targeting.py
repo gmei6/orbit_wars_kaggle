@@ -80,15 +80,3 @@ def calculate_attack_options(state: State, target: Planet, delta_t: int, traject
     need = required_to_capture(target.ships, target.production, delta_t)
     return need, (tx, ty)
 
-def get_travel_time(source: Planet, tx: float, ty: float, target_radius: float, garrison: int) -> int:
-    """Calculates how long it will take a fleet of size `garrison` to reach tx, ty from source."""
-    speed = 1.0 + (6.0 - 1.0) * (math.log(max(1, garrison)) / math.log(1000.0)) ** 1.5 if garrison > 0 else 1.0
-    speed = min(6.0, speed)
-    
-    dist = math.hypot(tx - source.x, ty - source.y)
-    travel_dist = max(0.0, dist - target_radius)
-    return math.ceil(travel_dist / speed)
-
-def is_path_clear(source: Planet, tx: float, ty: float) -> bool:
-    """Checks if the straight line path crosses the sun."""
-    return not hits_sun(source.x, source.y, tx, ty)
