@@ -1,4 +1,9 @@
-# Orbit Wars Agent
+# Orbit Wars Agent — v1 (frozen baseline)
+
+> **Frozen baseline.** Don't edit this to chase new behaviour — the arena
+> measures candidates against it. Active development lives in
+> [`../v1_1/`](../v1_1/), which splits `strategy.py` (brain) from `targeting.py`
+> (math); here, `targeting.py` still holds the decision logic.
 
 This directory contains the Kaggle agent source code. The agent runs as a single Python entry point (`agent.py:act`), parses the environment observation, and computes optimal launch commands.
 
@@ -81,5 +86,5 @@ sequenceDiagram
 - **`agent.py`**: The interface for the Kaggle environment. Wires the parser to the strategy. (Covers `Agent` node).
 - **`state.py`**: Typed data structures (`State`, `Planet`, `Fleet`, `Comet`) and observation parsing. (Covers `StateParse` and `StateNode` nodes).
 - **`strategy.py`**: Per-turn policy interface. Currently acts as a pass-through to `targeting.py`. (Covers `Strategy` node).
-- **`targeting.py`**: The core AI logic (ROI targeting, defensive reserves, and synchronized launch delays). (Covers `Target`, `GTC`, `DRP`, `TS`, `SFA`, and `CmdGen` nodes).
+- **`targeting.py`**: The core AI logic (greedy production-weighted targeting, defensive reserves, and synchronized launch delays). (Covers `Target`, `GTC`, `DRP`, `TS`, `SFA`, and `CmdGen` nodes).
 - **`physics.py`**: Exact extraction of the Kaggle environment's continuous math, used for predictive raycasting, line-of-sight checks, and trajectory generation. (Covers `Phys1`, `Phys2`, and `Phys3` nodes).

@@ -1,85 +1,99 @@
-# Orbit Wars Agent
+# Orbit Wars Agent — v1_1 (active development)
 
-This directory contains the Kaggle agent source code. The agent runs as a single Python entry point (`agent.py:act`), parses the environment observation, and computes optimal launch commands.
+> **Active development copy.** Macro changes happen here. The frozen baseline is
+> [`../v1/`](../v1/); the two behave identically until this copy diverges.
 
-## Architecture Overview
+This directory is the Kaggle agent. It runs as a single Python entry point
+(`agent.py:act`), parses the environment observation, and computes launch
+commands, leaning on a precomputed physics oracle to stay inside real-time turn
+limits.
 
-The core loop relies on separating state parsing from decision logic, while heavily utilizing a precomputed physics engine to stay within real-time turn limits.
+## Architecture (v1_1 refactor)
 
-
-
+v1_1 splits the old monolithic `targeting.py` in two: **`strategy.py` is the
+brain** (every decision), and **`targeting.py` is a pure-math oracle** (every
+calculation, no decisions). This is the difference from the v1 baseline, where
+`targeting.py` held both.
 
 ```mermaid
 graph TD
-    Env["Kaggle Environment"] --> ObsDict["Observation Dictionary"]
-    ObsDict --> Agent["agent.py: act"]
-    Agent --> ObsNode["obs"]
+    Env["Kaggle Environment"] --> Agent["agent.py: act"]
+    Agent --> Parse["state.py: parse"]
+    Parse --> Strategy["strategy.py: decide (the brain)"]
 
-    subgraph Data Parsing
-        StateParse["state.py: parse"]
+    subgraph Brain["Decision making — strategy.py"]
+        TS["Target scoring (comet / early-rush weights)"]
+        DR["Defense reserve allocation"]
+        SFA["Synchronized fleet arrivals"]
+        CmdGen["Command generation"]
     end
-    ObsNode --> StateParse
-    StateParse --> StateNode1["state"]
+    Strategy --> TS
+    Strategy --> DR
+    Strategy --> SFA
+    SFA --> CmdGen
 
-    subgraph Decision Making
-        Strategy["strategy.py: decide"]
-        StateNode2["state"]
-        Target["targeting.py: plan"]
-        Strategy --> StateNode2 --> Target
+    subgraph Oracle["Math oracle — targeting.py"]
+        GTC["get_trajectory_cache"]
+        DEF["calculate_defense_needs"]
+        ATK["calculate_attack_options"]
+        TT["get_travel_time"]
+        PC["is_path_clear"]
     end
-    StateNode1 --> Strategy
+    Strategy --> GTC
+    DR --> DEF
+    SFA --> ATK
+    SFA --> TT
+    SFA --> PC
 
-    subgraph Targeting Logic
-        GTC["Global Trajectory Caching (targeting.py)"]
-        DRP["Defense Reserve Prediction (targeting.py)"]
-        TS["Target Scoring (targeting.py)"]
-        SFA["Synchronized Fleet Arrivals (targeting.py)"]
+    subgraph Physics["Physics — physics.py"]
+        PP["planet_position"]
+        PFT["predict_fleet_target"]
+        HS["hits_sun"]
     end
-
-    Target --> GTC
-    Target --> DRP
-    Target --> TS
-    Target --> SFA
-
-    CmdGen["Command Generation (targeting.py)"]
-    Target --> CmdGen
-
-    Phys1["planet_position (physics.py)"]
-    Phys2["predict_fleet_target (physics.py)"]
-    Phys3["hits_sun (physics.py)"]
-
-    GTC --> Phys1
-    DRP --> Phys2
-    SFA --> Phys3
+    GTC --> PP
+    DEF --> PFT
+    PC --> HS
 
     CmdGen --> EnvOut["Kaggle Environment"]
 ```
 
-## Synchronized Fleet Arrivals (v1 Logic)
+## Synchronized Fleet Arrivals
 
-To prevent enemy defensive reserves from picking off our attacking fleets one-by-one, the targeting logic utilizes a synchronized arrival strategy. It targets a planet at a specific future time (`delta_t`) and coordinates launches across multiple owned planets so they land exactly on the same turn.
+To stop enemy reserves from picking off attackers one-by-one, `strategy.decide`
+targets a planet at a chosen future turn (`delta_t`) and staggers launches across
+owned planets so every fleet lands on the same turn. The travel-time and
+attack-window math come from `targeting.py`.
 
 ```mermaid
 sequenceDiagram
     participant Far as Far Planet
     participant Close as Close Planet
     participant Target as Target Planet
-    
-    Note over Far, Target: Agent selects a target for Turn T + 10
-    
+
+    Note over Far, Target: strategy selects a target for Turn T + 10
+
     Far->>Target: Travel Time: 10 turns (Delay: 0)
     Note over Far: Launches IMMEDIATELY
-    
+
     Close->>Target: Travel Time: 7 turns (Delay: 3)
     Note over Close: Waits 3 turns before launching
-    
+
     Note over Target: Both fleets hit the garrison simultaneously at T + 10
 ```
 
 ## Module Responsibilities
 
-- **`agent.py`**: The interface for the Kaggle environment. Wires the parser to the strategy. (Covers `Agent` node).
-- **`state.py`**: Typed data structures (`State`, `Planet`, `Fleet`, `Comet`) and observation parsing. (Covers `StateParse` and `StateNode` nodes).
-- **`strategy.py`**: Per-turn policy interface. Currently acts as a pass-through to `targeting.py`. (Covers `Strategy` node).
-- **`targeting.py`**: The core AI logic (ROI targeting, defensive reserves, and synchronized launch delays). (Covers `Target`, `GTC`, `DRP`, `TS`, `SFA`, and `CmdGen` nodes).
-- **`physics.py`**: Exact extraction of the Kaggle environment's continuous math, used for predictive raycasting, line-of-sight checks, and trajectory generation. (Covers `Phys1`, `Phys2`, and `Phys3` nodes).
+- **`agent.py`**: The Kaggle interface. Wires the parser to the strategy
+  (`act → parse → decide`). One line of logic.
+- **`state.py`**: Typed data structures (`State`, `Planet`, `Fleet`, `Comet`)
+  and observation parsing. `parse` is the only integration seam with the env.
+- **`strategy.py`**: The brain. Owns target scoring, defense-reserve allocation,
+  synchronized launch delays, and command generation. Calls `targeting.py` for
+  every number it needs.
+- **`targeting.py`**: Pure-math oracle. `get_trajectory_cache` (per-game
+  trajectory precompute), `calculate_defense_needs` (incoming enemy fleets),
+  `calculate_attack_options` (ships + position to capture a target at `delta_t`),
+  `get_travel_time`, `is_path_clear`. Makes no strategic decisions.
+- **`physics.py`**: Exact extraction of the Kaggle environment's continuous math
+  — orbital positions, fleet-target prediction, sun line-of-sight. The frozen
+  oracle, pinned to [`../addons/quant/baselines.json`](../addons/quant/baselines.json).

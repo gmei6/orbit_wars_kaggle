@@ -106,6 +106,7 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 
 - **Blockers:** None currently.
 - **Q1 (Strategy):** Why exactly does `Producer Lite` defeat `v1`? Are we lacking defensive reserves, or is its economy scaling faster? We need to pinpoint the flaw in `v1`'s synchronized attacks.
+- **Q2 (Physics / Combat):** Does the engine treat *same-owner* simultaneous arrivals as additive (fleets stack) or adversarial (`resolve_combat` top-two reduction, `force = max − second`)? `physics.py:resolve_combat` currently reduces multiple attackers to `(max − second)`; if that also applies to friendly co-arriving fleets, v1's synchronized-arrival strategy is partially self-defeating. Resolve against the vendored `orbit_wars.py` engine before building any timeline combat logic. (Raised Session, 2026-06-17; deferred — planning only for now.)
 
 ---
 

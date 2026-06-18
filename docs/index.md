@@ -20,6 +20,10 @@ This is the only file in the bundle that carries an `okf_version` (per spec
 
 * [Modules](/architecture/) - one knowledge doc per module, each bound to a code path
 
+# Design
+
+* [v2 Information Model & Strategy](/design/v2-information-model.md) - how state is stored (forecastable baseline, event timeline) plus the v2 doctrine and staged build plan
+
 # Add-ons
 
 * [Quant / numeric add-on](/../addons/quant/index.md) - optional; keep out of general projects
