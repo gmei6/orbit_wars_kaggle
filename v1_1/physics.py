@@ -56,19 +56,44 @@ def required_to_capture(garrison: int, production: int, turns: float) -> int:
     return int(math.floor(arrival_garrison(garrison, production, turns))) + 1
 
 
-def resolve_combat(attackers: list[int], garrison: int) -> tuple[bool, int]:
+def resolve_combat(planet_owner: int, garrison: int, arrival_fleets: list[tuple[int, int]]) -> tuple[int, int]:
     """Resolve simultaneous arrivals at one planet.
-    Largest attacker fights second-largest, the difference survives; survivors
-    fight the garrison; attackers>garrison flips ownership, tie = no flip.
-    Returns (captured, ships_left).
-    ponytail: models the documented top-two reduction; >2 multi-owner stacks
-    collapse to (max - second). Refine if the real engine proves finer order.
+    `arrival_fleets` is a list of (owner, ships).
+    Returns (new_owner, new_garrison).
     """
-    a = sorted(attackers, reverse=True)
-    force = a[0] - a[1] if len(a) >= 2 else (a[0] if a else 0)
-    if force > garrison:
-        return True, force - garrison
-    return False, garrison - force
+    if not arrival_fleets:
+        return planet_owner, garrison
+
+    player_ships = {}
+    for owner, ships in arrival_fleets:
+        player_ships[owner] = player_ships.get(owner, 0) + ships
+
+    sorted_players = sorted(player_ships.items(), key=lambda item: item[1], reverse=True)
+    top_player, top_ships = sorted_players[0]
+
+    if len(sorted_players) > 1:
+        second_ships = sorted_players[1][1]
+        survivor_ships = top_ships - second_ships
+        if sorted_players[0][1] == sorted_players[1][1]:
+            survivor_ships = 0
+        survivor_owner = top_player if survivor_ships > 0 else -1
+    else:
+        survivor_owner = top_player
+        survivor_ships = top_ships
+
+    new_owner = planet_owner
+    new_garrison = garrison
+
+    if survivor_ships > 0:
+        if planet_owner == survivor_owner:
+            new_garrison += survivor_ships
+        else:
+            new_garrison -= survivor_ships
+            if new_garrison < 0:
+                new_owner = survivor_owner
+                new_garrison = abs(new_garrison)
+
+    return new_owner, new_garrison
 
 
 def planet_position(initial_x: float, initial_y: float, radius: float, angular_velocity: float, step: int) -> tuple[float, float]:
@@ -147,6 +172,6 @@ if __name__ == "__main__":
     assert hits_sun(0, 50, 100, 50)        # straight through the sun
     assert not hits_sun(0, 0, 0, 100)      # left edge, clear
     assert required_to_capture(10, 3, 5) == 26   # arrival 25 -> need 26
-    cap, left = resolve_combat([30, 10], 15)     # 20 vs 15 -> capture, 5 left
-    assert cap and left == 5
+    new_owner, left = resolve_combat(1, 15, [(2, 30), (3, 10)])
+    assert new_owner == 2 and left == 5
     print("physics self-check passed")
