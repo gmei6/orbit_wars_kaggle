@@ -12,7 +12,7 @@ timestamp: 2026-06-17
 > Paste this whole file into a fresh LLM conversation before working, and ask the LLM to
 > return the whole updated file at the end (see the Update Protocol).
 
-- **Last updated:** 2026-06-17 — Session 4 (Stage 0: Engine Co-arrival confirmation)
+- **Last updated:** 2026-06-18 — Session 5 (Replay diagnosis: macro root cause vs Producer Lite)
 - **File version:** v1.0
 - **Owner:** Gary Mei
 
@@ -93,7 +93,7 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 
 ## §7 — Current Status 🟢 *(overwrite each session to reflect reality)
 
-- **Phase:** v2 Development (Information Model & Strategy)
+- **Phase:** v2 Development — macro tuning. Information model complete; replay diagnosis done; three scoring fixes queued (see §9).
 - **State of the Code:** 
   - V2 Information Model & Strategy design documented.
   - Benchmarked `v1` vs `Producer Lite`: 0% win-rate, proving we have a massive macroeconomic deficit (-2395 avg ships).
@@ -107,21 +107,26 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
   - **Stage 5 Complete:** Rewrote `v1_1/strategy.py` to use the v2 information model. Implemented "capital unfreezing" by calculating safe `min_garrison` from the timeline, added ROI-based target valuation, and logic to evacuate unholdable planets.
   - **Stage 5 Patch (Piecemeal Defeat & Expansion):** Added `RESERVATIONS` to `strategy.py` to persist synchronized delays across turns, and injected them into the timeline to prevent double-counting. Relaxed reachability race logic so the agent takes strategic risks rather than ceding the board. Achieved rapid early game expansion parity, but still loses 0-20 to Producer Lite (-4163 margin) due to later game scaling/target-selection issues.
   - Created `scripts/visualize.py` to generate and view local HTML replays of `kaggle_environments` matches, aiding visual debugging against `Producer Lite`.
+  - **Session 5 — Replay diagnosis (loss vs `Producer Lite`).** Parsed an uploaded HTML replay and verified it against the frozen engine math (`fleet_speed`, `resolve_combat`). Findings: (1) the proposed "snipe planet 13" was arithmetically correct (enemy 15 ships → captures neutral-7 at step 13 leaving 8; +5/turn → 13 at step 14, so 14 ships flips it) but **geometrically unreachable** — planet 13 sits ~40u from our only base (planet 12) on the opposite corner, so the earliest possible intercept is step 26, twelve turns after the capture. The existing reachability race correctly vetoes it. (2) The true cause of the loss is **macro/expansion failure**: we peaked at 2 planets while `Producer Lite` went 1→19 and won (final reward −1, eliminated ~turn 70). The agent hoarded ~40 idle ships on planet 12 until step 7, then launched slow 29-ship fleets at distant targets — the "frozen capital" + "shiny object" lessons in action. (3) Snipe is **not** a first-class term in `v2_macro/strategy.py`.
+  - **Repo drift noted:** active-dev dir is now `v2_macro/` (renamed from `v1_1/`), and a new `v(teamwork-preview)/` variant exists. `PROJECT_TRACKER.md`, `CLAUDE.md`, and `docs/` still reference `v1_1/` — reconcile in a follow-up.
 
 ---
 
 ## §8 — Open Questions & Blockers 🟢 *(overwrite each session)*
 
 - **Blockers:** None currently.
-- **Q1 (Strategy):** Why exactly does `Producer Lite` defeat `v2_macro`? We achieved early game expansion parity (Turn 50: 7 planets vs 13 planets), but Producer Lite's scaling is drastically higher (Turn 150: 5000+ ships). Does Producer Lite prioritize comets or specific geometry?
-- **Q2 (Engine):** Same-owner co-arrival rule is RESOLVED (fleets stack).
+- **Q1 (Strategy) — root cause identified.** The `Producer Lite` loss is our own macro/expansion failure, not an unknown enemy trick. In the analyzed replay we peaked at **2 planets** while `Producer Lite` grew 1→19 and won (final reward −1, eliminated ~turn 70). Driver: `value()` ranks targets by raw ROI ignoring travel time, and garrison-release hoards ships — so we expand late and toward distant targets. The comet hypothesis is now secondary/unconfirmed.
+- **Q2 (Strategy) — new.** Should "snipe" be a first-class valuation term? It is sound doctrine but absent from `v2_macro/strategy.py`, and must be **reachability-gated**: the planet-13 case proved a snipe can be arithmetically correct yet geometrically impossible.
+- **Q3 (Engine) — RESOLVED.** Same-owner co-arrivals stack (fleets combine). Confirmed Stage 0 (D-007).
 
 ---
 
 ## §9 — Next Actions 🟢 *(overwrite each session)
 
-1. Use `scripts/visualize.py` to visually analyze `Producer Lite`'s mid-game scaling (Turn 50-100). Are we ignoring comets?
-2. Implement comet-specific valuation or aggressive sun-avoidance routing if needed to counter Producer Lite.
+1. **Travel-time-discounted valuation (primary macro fix).** Change `value()` to score ROI *per turn* — penalize distant targets so near, cheap neutrals outrank far ones. This directly addresses the expansion collapse.
+2. **Release garrison earlier (reduce hoarding).** Relax `min_garrison` so idle capital launches into expansion sooner instead of sitting on the home planet.
+3. **Add a reachability-gated snipe term.** Value capturing a planet at its post-combat garrison trough (right after an enemy capture), but only when the reachability race confirms a fleet can land inside the trough window.
+4. *(Supporting)* Scan the replay for genuinely missed expansions/snipes (near, cheap, reachable) to tune `value()` against real cases rather than the unreachable planet 13.
 
 ---
 
@@ -142,6 +147,8 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 - `D-011 | 2026-06-18 | Inject RESERVATIONS into predictive timelines | Delayed fleet launches for synchronized attacks were "invisible" to the agent on subsequent turns, causing it to double-book attacks on the same target. Injecting them fixes double-counting. | §7`
 - `D-012 | 2026-06-18 | Relax overly conservative reachability logic | Assuming the enemy will perfectly capture any planet they are closer to paralyzed our agent's expansion. Taking strategic risks is required for macro scale. | §7`
 - `D-013 | 2026-06-18 | Created scripts/visualize.py for local HTML replays | Allows rapid visual debugging of mid-game scaling and positional logic without relying purely on text logs or the Kaggle web UI. | §4`
+- `D-014 | 2026-06-18 | Reject the decision-tree architecture pivot; keep the utility/scoring core. | Strategy is resource allocation under contention — one ship pool, many competing claims — and a priority-ordered tree cannot arbitrate marginal trade-offs or split a garrison. Model the "reasons to send ships" (capture/defend/deny/evacuate/consolidate/stage/comet/bait/pin) as competing utility terms; add only a thin guard/mode layer (evacuate, defend-or-die). | §3, §7`
+- `D-015 | 2026-06-18 | Prioritize three macro scoring fixes as the v2 direction: travel-time-discounted ROI, earlier garrison release, reachability-gated snipe term. | Replay diagnosis showed the Producer Lite loss is a macro/expansion failure (2-planet peak, eliminated ~turn 70), driven by raw-ROI targeting that ignores travel time plus ship hoarding — not a missed-tactics problem. The proposed planet-13 snipe was arithmetically correct but geometrically unreachable. | §7, §9`
 
 ---
 
@@ -162,3 +169,4 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 - `S-010 | 2026-06-17 | v1.1 | Completed Stages 3, 4, and 5 of the v2 Information Model. Added reachability.py and economy.py. Rewrote strategy.py to use timeline-based capital unfreezing and ROI valuation. Achieved 100% win rate against v1, but 0% against Producer Lite.`
 - `S-011 | 2026-06-18 | v2_macro | Fixed piecemeal defeat and paralyzed expansion. Implemented cross-turn RESERVATIONS memory, injected reservations into predictive timelines to prevent double-counting targets, and relaxed reachability race constraints. Early game parity achieved but mid-game macro deficit persists against Producer Lite.`
 - `S-012 | 2026-06-18 | v2_macro | Authored scripts/visualize.py for generating local HTML replays via kaggle_environments. Confirmed Player A (0) is blue/bottom-left, B (1) is orange/top-right.`
+- `S-013 | 2026-06-18 | v2_macro | Diagnosed the Producer Lite loss from an uploaded replay. Verified the engine fleet-speed/combat math; confirmed the proposed planet-13 snipe was arithmetically correct but geometrically unreachable (earliest intercept +12 turns late). Identified the true cause as a macro/expansion failure (2-planet peak, eliminated ~turn 70). Rejected a decision-tree rearchitecture (D-014); queued three macro scoring fixes (D-015). Noted dir drift: v1_1 → v2_macro + new v(teamwork-preview)/.`
