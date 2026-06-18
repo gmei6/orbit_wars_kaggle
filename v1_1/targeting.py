@@ -45,24 +45,7 @@ def get_trajectory_cache(state: State) -> dict:
     
     return trajectory_cache
 
-def calculate_defense_needs(state: State, trajectory_cache: dict) -> dict[int, int]:
-    """Returns a dict mapping planet_id to total incoming enemy ships."""
-    def get_pos(tid, t):
-        if t < 1 or t > MAX_PRECOMPUTE:
-            return None
-        return trajectory_cache[tid][t - 1]
 
-    my_targets = {p.id: (lambda t, tid=p.id: get_pos(tid, t), p.radius) for p in state.mine()}
-    incoming = {p.id: 0 for p in state.mine()}
-    
-    for f in state.fleets:
-        if f.owner != state.me:
-            pred = predict_fleet_target(f.x, f.y, f.ships, f.angle, my_targets, max_turns=MAX_PRECOMPUTE)
-            if pred is not None:
-                tid, turns = pred
-                if tid in incoming:
-                    incoming[tid] += f.ships
-    return incoming
 
 def calculate_attack_options(state: State, target: Planet, delta_t: int, trajectory_cache: dict) -> tuple[int | None, tuple[float, float] | None]:
     """

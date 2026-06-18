@@ -9,11 +9,6 @@ from dataclasses import dataclass
 class Planet:
     id: int; owner: int; x: float; y: float
     radius: float; ships: int; production: int
-    incoming_enemy_ships: int = 0
-
-    @property
-    def is_in_danger(self) -> bool:
-        return self.incoming_enemy_ships > 0
 
 
 @dataclass

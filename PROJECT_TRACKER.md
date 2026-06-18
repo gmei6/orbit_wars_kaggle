@@ -100,6 +100,7 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
   - **Major Refactor (v1_1)**: `src` folder renamed to `v1` (baseline). Duplicated to `v1_1` for active development. Cleanly separated decision-making logic from math. `targeting.py` is now purely a math oracle; `strategy.py` is the "brain".
   - Benchmarking scripts (`arena.py`, `sim.py`) moved to a global `scripts/` folder to clean up the agent directories.
   - **Stage 0 Complete:** Read Kaggle engine logic and confirmed the same-owner co-arrival stacking rule. Updated `v1_1/physics.py` to mirror this logic and pinned it with `tests/test_v1_1_physics.py`.
+  - **Stage 1 Complete:** Created `v1_1/timeline.py` to fold per-planet arrivals from `state.fleets` into a deterministic forecast. Retired naive `calculate_defense_needs` in `targeting.py` and `incoming_enemy_ships` in `state.py`. Verified via `tests/test_v1_1_timeline.py`.
   - **Stage 2 Complete:** Travel/intercept math consolidated into `v1_1/physics.py`, eliminating duplicates in `targeting.py`. Precomputed distance table added for rigid-body inner planet co-rotation and stationary outer planets.
   - `v1_1` behaves 100% identically to `v1` (verified via arena match), providing a clean slate for new macro optimizations.
 
@@ -116,12 +117,9 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 
 ## §9 — Next Actions 🟢 *(overwrite each session)
 
-1. Begin Stage 1: Build `v1_1/timeline.py` for per-planet arrivals from `state.fleets` via the intercept layer.
-2. Implement `garrison_at` / `owner_at` in the timeline to retire naive `calculate_defense_needs`.
-3. Test timeline forecast vs a vendored-engine rollout to ensure exact parity without new launches.
-4. Implement reachability race logic (`reachable(P, side)`) over the timeline and travel layers (Stage 3).
-5. Implement planet valuation and economy scoreboard tracking (Stage 4).
-6. Strategy rewrite in `v1_1/strategy.py` leveraging new structures (Stage 5).
+1. Implement reachability race logic (`reachable(P, side)`) over the timeline and travel layers (Stage 3).
+2. Implement planet valuation and economy scoreboard tracking (Stage 4).
+3. Strategy rewrite in `v1_1/strategy.py` leveraging new structures (Stage 5).
 
 ---
 
@@ -137,6 +135,7 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 - `D-006 | 2026-06-17 | Move arena.py and sim.py to scripts/. | Keep the agent directory clean by removing non-agent code. | §4`
 - `D-007 | 2026-06-17 | Update v1_1/physics.py resolve_combat to stack fleets by owner. | Kaggle engine interpreter groups fleets by owner before resolving combat. Updating physics allows correct calculation of synchronized multi-fleet arrivals. | §7`
 - `D-008 | 2026-06-17 | V2 Information Model | Moved from per-turn dense snapshot to event-based timeline forecast. Implemented rigid-body inner planet rotation distance caching. | Replaces naive sum-based defense calculation. Frees up 'frozen capital'. | §3, §7`
+- `D-009 | 2026-06-17 | Replace naive dense state with sparse timeline. | The turn-by-turn state projection fails on flips mid-window. Timeline correctly folds chronologically ordered arrivals. Removed calculate_defense_needs and incoming_enemy_ships. | §7`
 
 ---
 
@@ -152,3 +151,4 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 - `S-006 | 2026-06-17 | v1.1 | Benchmarked v1 vs Producer Lite (0% win rate). Refactored src/ into v1/ and v1_1/. Separated math into targeting.py and decision logic into strategy.py. Moved sim/arena out to scripts/. Updated OKF docs.`
 - `S-007 | 2026-06-17 | v1.1 | Completed v2 Information Model Stage 0: confirmed Kaggle engine same-owner combat stacking logic. Wrote test_v1_1_physics.py to pin it.`
 - `S-008 | 2026-06-17 | v1.1 | Completed Stage 2: Consolidated travel_time and lane_clear into physics.py. Added stationary distance table. Verified parity vs v1.`
+- `S-009 | 2026-06-17 | v1.1 | Completed Stage 1 of v2 Information Model. Created timeline.py, implemented PlanetTimeline and chronological event folding. Removed obsolete state/targeting code. Passed timeline parity tests.`- `S-009 | 2026-06-17 | v1.1 | Authored docs/design/v2-information-model.md (written design + 6-stage plan + doctrine behind D-008); registered it in docs/index.md and synced it to Stage 0/2 results. Flagged stale index/README docs + missing root CLAUDE.md. Formalized session-start / session-wrapup as Cowork skills; rebuilt session-wrapup as a generic packaged skill.`

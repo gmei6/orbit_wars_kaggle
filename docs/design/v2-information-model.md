@@ -63,9 +63,11 @@ This replaces the naive `calculate_defense_needs` in
 [targeting](/architecture/targeting.md), which sums incoming enemy ships
 ignoring arrival order, ownership flips, and survival.
 
-> **Blocked on tracker Q2.** The fold's combat step needs the same-owner
-> co-arrival rule (stack vs. `resolve_combat` reduction). Resolve before
-> building combat into the fold.
+> **Resolved (Stage 0, decision D-007).** Same-owner co-arrivals **stack**
+> (additive force); multi-owner contention reduces by top-two. The fold calls
+> `physics.resolve_combat(planet_owner, garrison, [(owner, ships), ...])`, now
+> updated in `v1_1/physics.py` and pinned by `tests/test_v1_1_physics.py`. This
+> also confirms v1's synchronized arrivals are engine-valid, not self-defeating.
 
 ## 2. Travel / intercept layer (size-aware)
 
@@ -150,8 +152,8 @@ behind the `Producer Lite` loss (tracker §7).
 
 # Open questions
 
-- **Q2 (tracker §8):** same-owner combat-combination rule — blocks timeline
-  combat and validates whether v1 synchronized arrivals even help.
+- **Q2 — RESOLVED (Stage 0).** Same-owner co-arrivals stack (additive), so v1
+  synchronized arrivals are engine-valid. See `v1_1/physics.py:resolve_combat`.
 - **Thresholds:** what time-margin and force-ratio count as "wins the
   reachability race" and as a "decisive" knockout.
 - **Multi-hop routing** around the sun: real capability or YAGNI?
@@ -163,9 +165,9 @@ Staged so each rung is independently testable via
 [`scripts/sim.py`](/../scripts/sim.py). All work lands in `v1_1/`. Each stage is
 arena-gated: no regression vs. `v1`, measured vs. `Producer Lite`.
 
-- **Stage 0 — Resolve Q2 (blocker).** Read `vendor/.../orbit_wars.py`, confirm
-  the same-owner co-arrival rule, pin it with a `physics` test. Nothing combat
-  in the timeline ships before this.
+- **Stage 0 — Resolve Q2 (DONE, 2026-06-17, D-007).** Confirmed against the
+  engine: same-owner fleets **stack**. `v1_1/physics.py:resolve_combat` updated
+  and pinned by `tests/test_v1_1_physics.py`.
 - **Stage 1 — Event timeline.** New `v1_1/timeline.py`: build per-planet
   `arrivals` from `state.fleets` via the intercept layer; implement
   `garrison_at` / `owner_at`. Retire the naive `calculate_defense_needs`. Test:
