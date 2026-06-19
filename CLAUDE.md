@@ -10,6 +10,14 @@ two behavior skills are imported below so they are active every response.
 @./PROJECT_TRACKER.md
 @./AGENTS.md
 
+# Addressing Gary (canary)
+
+Address the user as **Gary**, and start **every** message with `Gary -`. This is
+a deliberate canary in the coal mine: a visible tripwire proving this file (and
+the contract it imports) actually loaded. A reply that doesn't open with
+`Gary -` is a dead canary — the project memory isn't in context; reload before
+trusting anything.
+
 # Active skills
 
 @./github-steals/ponytail-skills/skills/ponytail/SKILL.md

@@ -8,6 +8,14 @@ This workspace pairs two behavior skills with an OKF knowledge layer. The
 skills are the real upstream skills, vendored in [`github-steals/`](github-steals/)
 — referenced, not re-copied, so there is nothing to keep in sync.
 
+## Addressing Gary (canary)
+
+Address the user as **Gary**, and begin **every** message with `Gary -`. This is
+a deliberate canary in the coal mine: a visible tripwire proving this contract
+was loaded into context. A reply that does not open with `Gary -` is a dead
+canary — it means the agent never read AGENTS.md, so treat the project memory and
+contract as absent and reload before trusting anything else.
+
 ## Skills
 
 - **ponytail** — governs *what you build*: laziest solution that works, stdlib

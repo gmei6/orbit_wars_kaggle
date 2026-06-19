@@ -12,6 +12,13 @@ the two behavior skills are imported below so they load every session.
 @./github-steals/ponytail-skills/skills/ponytail/SKILL.md
 @./github-steals/caveman/skills/caveman/SKILL.md
 
+# Addressing Gary (canary)
+
+Address the user as **Gary**, and start **every** message with `Gary -` — a
+deliberate canary in the coal mine: a visible tripwire proving this file and the
+imported contract loaded. No `Gary -` prefix means a dead canary: the project
+memory isn't in context, so reload before trusting anything.
+
 Defaults: ponytail **full**, caveman **lite**. Follow `docs/workflow.md`; honor
 `docs/conventions.md`.
 

@@ -151,3 +151,27 @@ earlier). Change one lever, re-measure, keep or revert. Stay ≥ parity vs
   the same change, then `PYTHONPATH=. python scripts/check_okf.py docs`.
 - **Append-only memory.** Log the landed fix as the next decision (D-019) plus a
   changelog entry; update §7–§9 live state.
+
+## Outcome (Session 8, D-020) — garrison release is NOT the binding constraint
+
+Ran the verify step. A `GARRISON_DEBUG` probe over one `producer_lite` game
+(seed 12345) showed:
+
+- **Early game (1 base, steps 0–14): capital is already released** —
+  `released ≈ owned`, `wl=0` — but `sent=0` most turns. The agent only launches a
+  fully funded capture, so a lone base drip-feeds ~29-ship lumps every ~6 turns
+  and stalls at 3 planets by step 15.
+- **Lever A (shrink lookahead 30→12) = no-op:** `released` moved 0 ships, `wl=0`
+  throughout. The freeze is not far threats.
+- **The mid-game freeze is the M2 trough** (step 40: `released=32 / owned=205`,
+  `wl=0`) reacting to a <12-turn hit; it reserves ~173 ships and loses the planet
+  anyway by step 50–60 — real but secondary.
+- `pos_targets` stays 8–16 until the step-50 collapse, so **M3 is not the early
+  wall** either.
+
+**Verdict:** the binding constraint is the all-or-nothing launch/target gate
+(`strategy.decide` step 4), not `min_garrison`. Lever A was reverted to the 57%
+baseline (no arena run — the constraint was disproven before gating). **Lever B
+(reserve only the first-threat survival force, release the surplus) is parked
+here** as the right fix for the M2 trough when we return to it. Next direction:
+the launch gate (tracker §9 #1).
