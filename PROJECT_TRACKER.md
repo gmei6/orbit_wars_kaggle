@@ -12,7 +12,7 @@ timestamp: 2026-06-17
 > Paste this whole file into a fresh LLM conversation before working, and ask the LLM to
 > return the whole updated file at the end (see the Update Protocol).
 
-- **Last updated:** 2026-06-18 — Session 5 (Replay diagnosis: macro root cause vs Producer Lite)
+- **Last updated:** 2026-06-18 — Session 6 (v2_1: travel-time valuation landed, beats v2_macro 57%; arena tooling)
 - **File version:** v1.0
 - **Owner:** Gary Mei
 
@@ -93,7 +93,7 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 
 ## §7 — Current Status 🟢 *(overwrite each session to reflect reality)
 
-- **Phase:** v2 Development — macro tuning. Information model complete; replay diagnosis done; three scoring fixes queued (see §9).
+- **Phase:** v2 Development — macro tuning, now in **`v2_1/`** (active dev dir). Travel-time valuation (Next Action #1) landed and validated vs the frozen `v2_macro`; ship-hoarding is the next macro lever (see §9).
 - **State of the Code:** 
   - V2 Information Model & Strategy design documented.
   - Benchmarked `v1` vs `Producer Lite`: 0% win-rate, proving we have a massive macroeconomic deficit (-2395 avg ships).
@@ -108,25 +108,28 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
   - **Stage 5 Patch (Piecemeal Defeat & Expansion):** Added `RESERVATIONS` to `strategy.py` to persist synchronized delays across turns, and injected them into the timeline to prevent double-counting. Relaxed reachability race logic so the agent takes strategic risks rather than ceding the board. Achieved rapid early game expansion parity, but still loses 0-20 to Producer Lite (-4163 margin) due to later game scaling/target-selection issues.
   - Created `scripts/visualize.py` to generate and view local HTML replays of `kaggle_environments` matches, aiding visual debugging against `Producer Lite`.
   - **Session 5 — Replay diagnosis (loss vs `Producer Lite`).** Parsed an uploaded HTML replay and verified it against the frozen engine math (`fleet_speed`, `resolve_combat`). Findings: (1) the proposed "snipe planet 13" was arithmetically correct (enemy 15 ships → captures neutral-7 at step 13 leaving 8; +5/turn → 13 at step 14, so 14 ships flips it) but **geometrically unreachable** — planet 13 sits ~40u from our only base (planet 12) on the opposite corner, so the earliest possible intercept is step 26, twelve turns after the capture. The existing reachability race correctly vetoes it. (2) The true cause of the loss is **macro/expansion failure**: we peaked at 2 planets while `Producer Lite` went 1→19 and won (final reward −1, eliminated ~turn 70). The agent hoarded ~40 idle ships on planet 12 until step 7, then launched slow 29-ship fleets at distant targets — the "frozen capital" + "shiny object" lessons in action. (3) Snipe is **not** a first-class term in `v2_macro/strategy.py`.
-  - **Repo drift noted:** active-dev dir is now `v2_macro/` (renamed from `v1_1/`), and a new `v(teamwork-preview)/` variant exists. `PROJECT_TRACKER.md`, `CLAUDE.md`, and `docs/` still reference `v1_1/` — reconcile in a follow-up.
+  - **Session 6 — Travel-time valuation (Next Action #1) DONE.** Created `v2_1/` (copy of `v2_macro`) as the active dev dir and made it self-contained (the copy's `economy.py`/`reachability.py`/`agent.py` imported the `v2_macro` package, so edits silently ran `v2_macro` — switched to relative imports). Diagnosed that `value()` did *not* "ignore travel time": it already divided by a term, but the term was raw Euclidean distance (not turns), off a stale `initial_planets` position, and speed-blind. **Fix (D-016):** reuse the reachability race's `t_me` (earliest credible-capture turn — size/position-aware, already computed for the hold multiplier) as the time term; return 0 when unreachable. **Validated:** `v2_1` beats the frozen `v2_macro` **57.0%** over 200 games (95% CI 50.1–63.7%, LOS 97.6%, +875 avg ships). Still **0%** vs `Producer Lite` (margin ~−4200) — the remaining gap is ship-hoarding, not valuation.
+  - **Session 6 — Arena tooling (D-017).** Wired `arena.py` `_resolve_spec` for `v2_1`, `v2_macro`, and `producer_lite`; fixed a `producer_lite` loader crash (`spec_from_file_location` modules must be registered in `sys.modules` before `exec_module`). M1 Max perf: **kept** BLAS/OMP thread-pinning (`setdefault` to 1; ~6% vs the torch opponent), **rejected** the performance-core worker cap (measured: with threads pinned, throughput rises with workers, 10 > 9 > 8). Default reverted to `cpu_count-1` + an `ARENA_WORKERS` override; `scripts/arena_baseline.py` kept as a pinning-off A/B reference.
+  - **Repo drift (still open):** active dev is now `v2_1/` (← `v2_macro` ← `v1_1`), with `v2_macro/` as the frozen prior baseline and a `v(teamwork-preview)/` variant. `CLAUDE.md`, `AGENTS.md`, and `docs/` still reference `v1_1/` (incl. `resource:` paths) — reconcile.
 
 ---
 
 ## §8 — Open Questions & Blockers 🟢 *(overwrite each session)*
 
-- **Blockers:** None currently.
-- **Q1 (Strategy) — root cause identified.** The `Producer Lite` loss is our own macro/expansion failure, not an unknown enemy trick. In the analyzed replay we peaked at **2 planets** while `Producer Lite` grew 1→19 and won (final reward −1, eliminated ~turn 70). Driver: `value()` ranks targets by raw ROI ignoring travel time, and garrison-release hoards ships — so we expand late and toward distant targets. The comet hypothesis is now secondary/unconfirmed.
-- **Q2 (Strategy) — new.** Should "snipe" be a first-class valuation term? It is sound doctrine but absent from `v2_macro/strategy.py`, and must be **reachability-gated**: the planet-13 case proved a snipe can be arithmetically correct yet geometrically impossible.
+- **Blockers:** None.
+- **Q1 (Strategy) — partially resolved.** Travel-time valuation is done: scoring ROI per `t_me` made `v2_1` beat the frozen `v2_macro` 57% (D-016). But `v2_1` still loses 0% to `Producer Lite` (margin ~−4200), so the *binding* constraint is now **ship-hoarding**, not target ranking — the agent expands but under-commits idle capital. Next lever: release garrison earlier (Next Action #1).
+- **Q2 (Strategy) — open.** Should "snipe" be a first-class, reachability-gated valuation term in `economy.py`/`strategy.py`? Still absent; deferred behind the garrison fix.
 - **Q3 (Engine) — RESOLVED.** Same-owner co-arrivals stack (fleets combine). Confirmed Stage 0 (D-007).
+- **Q4 (Hygiene) — open.** Repo drift: `CLAUDE.md`, `AGENTS.md`, and `docs/architecture/*` (incl. `resource:` paths) still point at `v1_1/`; active dir is `v2_1/`. Reconcile so the contract routes work to the right place.
 
 ---
 
 ## §9 — Next Actions 🟢 *(overwrite each session)
 
-1. **Travel-time-discounted valuation (primary macro fix).** Change `value()` to score ROI *per turn* — penalize distant targets so near, cheap neutrals outrank far ones. This directly addresses the expansion collapse.
-2. **Release garrison earlier (reduce hoarding).** Relax `min_garrison` so idle capital launches into expansion sooner instead of sitting on the home planet.
-3. **Add a reachability-gated snipe term.** Value capturing a planet at its post-combat garrison trough (right after an enemy capture), but only when the reachability race confirms a fleet can land inside the trough window.
-4. *(Supporting)* Scan the replay for genuinely missed expansions/snipes (near, cheap, reachable) to tune `value()` against real cases rather than the unreachable planet 13.
+1. **Release garrison earlier (reduce hoarding) — primary remaining macro fix.** Relax `min_garrison` in `v2_1/strategy.py` so idle capital launches into expansion sooner. This is the binding constraint behind the `Producer Lite` loss now that valuation is fixed. Validate vs `v2_macro` (stay ≥ parity) and watch the `Producer Lite` score margin (~−4200) shrink + planet count rise.
+2. **Add a reachability-gated snipe term.** Value capturing a planet at its post-combat garrison trough, only when the reachability race confirms a fleet can land inside the trough window.
+3. **Reconcile the dir drift (Q4).** Update `CLAUDE.md`/`AGENTS.md`/`docs/` from `v1_1/` → current dirs and fix `resource:` paths; document the `t_me`-based valuation in `docs/architecture/economy.md` (D-016).
+4. *(Supporting)* Use `scripts/visualize.py` on a `Producer Lite` game to confirm `v2_1` expands past 2 planets after the garrison fix.
 
 ---
 
@@ -149,6 +152,8 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 - `D-013 | 2026-06-18 | Created scripts/visualize.py for local HTML replays | Allows rapid visual debugging of mid-game scaling and positional logic without relying purely on text logs or the Kaggle web UI. | §4`
 - `D-014 | 2026-06-18 | Reject the decision-tree architecture pivot; keep the utility/scoring core. | Strategy is resource allocation under contention — one ship pool, many competing claims — and a priority-ordered tree cannot arbitrate marginal trade-offs or split a garrison. Model the "reasons to send ships" (capture/defend/deny/evacuate/consolidate/stage/comet/bait/pin) as competing utility terms; add only a thin guard/mode layer (evacuate, defend-or-die). | §3, §7`
 - `D-015 | 2026-06-18 | Prioritize three macro scoring fixes as the v2 direction: travel-time-discounted ROI, earlier garrison release, reachability-gated snipe term. | Replay diagnosis showed the Producer Lite loss is a macro/expansion failure (2-planet peak, eliminated ~turn 70), driven by raw-ROI targeting that ignores travel time plus ship hoarding — not a missed-tactics problem. The proposed planet-13 snipe was arithmetically correct but geometrically unreachable. | §7, §9`
+- `D-016 | 2026-06-18 | Implement travel-time-discounted valuation via the reachability race's t_me (in v2_1/economy.py). | The old value() time term was raw Euclidean distance off a stale initial_planets position and speed-blind, not turns. Reusing t_me — the earliest credible-capture turn, already computed for the hold multiplier — makes ROI per real turn of travel and returns 0 when unreachable. Validated: v2_1 beat the frozen v2_macro 57.0% over 200 games (95% CI 50.1–63.7%, +875 avg ships). Completes Next Action #1 of D-015. | §7, §9`
+- `D-017 | 2026-06-18 | Arena tooling: fix the producer_lite loader, keep BLAS/OMP thread-pinning, reject the worker cap. | (1) spec_from_file_location modules must be registered in sys.modules before exec_module or @dataclass can't resolve __module__ — fixed, producer_lite now runs. (2) Pinning math-lib threads to 1 (setdefault) gave ~6% throughput vs the torch opponent — kept. (3) The M1 Max performance-core worker cap measured slower: with threads pinned, throughput rises with worker count (10 > 9 > 8), so reverted to cpu_count-1 + an ARENA_WORKERS override. | §4`
 
 ---
 
@@ -170,3 +175,4 @@ read §2 (North Star) → §7 (Current Status) → §8 (Open Questions) → §9 
 - `S-011 | 2026-06-18 | v2_macro | Fixed piecemeal defeat and paralyzed expansion. Implemented cross-turn RESERVATIONS memory, injected reservations into predictive timelines to prevent double-counting targets, and relaxed reachability race constraints. Early game parity achieved but mid-game macro deficit persists against Producer Lite.`
 - `S-012 | 2026-06-18 | v2_macro | Authored scripts/visualize.py for generating local HTML replays via kaggle_environments. Confirmed Player A (0) is blue/bottom-left, B (1) is orange/top-right.`
 - `S-013 | 2026-06-18 | v2_macro | Diagnosed the Producer Lite loss from an uploaded replay. Verified the engine fleet-speed/combat math; confirmed the proposed planet-13 snipe was arithmetically correct but geometrically unreachable (earliest intercept +12 turns late). Identified the true cause as a macro/expansion failure (2-planet peak, eliminated ~turn 70). Rejected a decision-tree rearchitecture (D-014); queued three macro scoring fixes (D-015). Noted dir drift: v1_1 → v2_macro + new v(teamwork-preview)/.`
+- `S-014 | 2026-06-18 | v2_1 | Created v2_1 (active dev) and made it self-contained (relative imports). Implemented travel-time valuation: value() scores ROI per t_me (reachability earliest-capture turn) instead of raw distance — beats frozen v2_macro 57% (200 games, +875 ships); still 0% vs Producer Lite (hoarding remains, → next action). Wired arena _resolve_spec for v2_1/v2_macro/producer_lite; fixed the producer_lite sys.modules loader crash. Optimized arena for M1 Max: kept BLAS/OMP thread-pinning (~6%), rejected the perf-core worker cap (more workers = faster once pinned). Logged D-016, D-017.`

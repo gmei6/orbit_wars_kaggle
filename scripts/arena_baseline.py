@@ -36,6 +36,8 @@ files. `_resolve_spec` is the single extension point for M3 parameter
 injection (resolve a (path, params) spec to a callable *inside the worker*, so
 nothing unpicklable crosses a process boundary).
 """
+# NOTE: pre-optimization BASELINE snapshot of arena.py (producer_lite loader fix
+# only, no perf changes) — kept for before/after speed comparison. Disposable.
 from __future__ import annotations
 
 import argparse
@@ -46,16 +48,6 @@ import sys
 import time
 import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
-
-# Pin inner math-library threads to 1 before any heavy import (kaggle/NumPy and,
-# for the producer_lite opponent, torch). arena parallelises at the PROCESS level
-# via ProcessPoolExecutor, so each worker letting BLAS/OpenMP spin its own thread
-# pool oversubscribes the cores and thrashes. setdefault so an explicit shell
-# override still wins; runs before the kaggle import below and re-runs in each
-# spawned worker before it imports torch.
-for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
-           "VECLIB_MAXIMUM_THREADS", "NUMEXPR_NUM_THREADS"):
-    os.environ.setdefault(_v, "1")
 
 
 @contextlib.contextmanager
@@ -287,28 +279,13 @@ def build_tasks(a, b, games, players, base_seed, episode_steps):
     return tasks
 
 
-def _default_workers():
-    """Default worker count: ARENA_WORKERS env override, else os.cpu_count()-1.
-    Measured on M1 Max: with math-library threads pinned to 1 (see top of file),
-    arena throughput RISES with worker count up to all cores -- capping at the
-    performance cores was slower, so there is no auto-cap. Set ARENA_WORKERS to
-    push to all cores for the last few percent."""
-    env = os.environ.get("ARENA_WORKERS")
-    if env:
-        try:
-            return max(1, int(env))
-        except ValueError:
-            pass
-    return max(1, (os.cpu_count() or 2) - 1)
-
-
 def run_arena(a="main.py", b="starter", games=100, players=2, base_seed=12345,
               workers=None, episode_steps=None, confidence=0.95, quiet=False):
     """Run `games` games of A vs B and return an aggregated result dict."""
     if players not in (2, 4):
         raise ValueError("players must be 2 or 4")
     if workers is None:
-        workers = _default_workers()
+        workers = max(1, (os.cpu_count() or 2) - 1)
     workers = max(1, min(workers, games))
     z = _z_for(confidence)
 
@@ -423,7 +400,7 @@ def main():
     ap.add_argument("--games", type=int, default=100, help="number of games (default 100)")
     ap.add_argument("--players", type=int, default=2, choices=(2, 4), help="2 (A vs B) or 4 (A vs 3xB)")
     ap.add_argument("--seed", type=int, default=12345, help="base seed (default 12345)")
-    ap.add_argument("--workers", type=int, default=None, help="parallel processes (default: $ARENA_WORKERS, else cpus-1)")
+    ap.add_argument("--workers", type=int, default=None, help="parallel processes (default cpus-1)")
     ap.add_argument("--steps", type=int, default=None, help="episodeSteps override (default 500; use only for fast smoke tests)")
     ap.add_argument("--confidence", type=float, default=0.95, help="CI confidence level (default 0.95)")
     ap.add_argument("--quiet", action="store_true", help="suppress the live progress counter")
