@@ -2,7 +2,7 @@
 type: Module
 title: State
 description: Decode the raw Orbit Wars observation into typed planets, comets, and fleets.
-resource: v1_1/state.py
+resource: v2_1/state.py
 tags: [observation, parsing]
 timestamp: 2026-06-16
 ---

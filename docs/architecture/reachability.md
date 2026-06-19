@@ -2,7 +2,7 @@
 type: Module
 title: Reachability
 description: Calculates the fastest credible arrival times to define defense thresholds and strike windows.
-resource: v1_1/reachability.py
+resource: v2_1/reachability.py
 tags: [race, threshold, defense, v2]
 timestamp: 2026-06-18
 ---

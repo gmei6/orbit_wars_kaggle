@@ -2,7 +2,7 @@
 type: Design
 title: v2 Information Model & Strategy
 description: How the agent stores game state (the forecastable baseline) and the doctrine and build plan for v2 macro play.
-resource: v1_1/
+resource: v2_1/
 tags: [design, strategy, information-model, economy, v2]
 timestamp: 2026-06-17
 ---
@@ -66,7 +66,7 @@ ignoring arrival order, ownership flips, and survival.
 > **Resolved (Stage 0, decision D-007).** Same-owner co-arrivals **stack**
 > (additive force); multi-owner contention reduces by top-two. The fold calls
 > `physics.resolve_combat(planet_owner, garrison, [(owner, ships), ...])`, now
-> updated in `v1_1/physics.py` and pinned by `tests/test_v1_1_physics.py`. This
+> updated in `v2_1/physics.py` and pinned by `tests/test_v1_1_physics.py`. This
 > also confirms v1's synchronized arrivals are engine-valid, not self-defeating.
 
 ## 2. Travel / intercept layer (size-aware)
@@ -153,7 +153,7 @@ behind the `Producer Lite` loss (tracker §7).
 # Open questions
 
 - **Q2 — RESOLVED (Stage 0).** Same-owner co-arrivals stack (additive), so v1
-  synchronized arrivals are engine-valid. See `v1_1/physics.py:resolve_combat`.
+  synchronized arrivals are engine-valid. See `v2_1/physics.py:resolve_combat`.
 - **Thresholds:** what time-margin and force-ratio count as "wins the
   reachability race" and as a "decisive" knockout.
 - **Multi-hop routing** around the sun: real capability or YAGNI?
@@ -162,13 +162,13 @@ behind the `Producer Lite` loss (tracker §7).
 
 Staged so each rung is independently testable via
 [`scripts/arena.py`](/../scripts/arena.py) (self-play, Wilson intervals) and
-[`scripts/sim.py`](/../scripts/sim.py). All work lands in `v1_1/`. Each stage is
+[`scripts/sim.py`](/../scripts/sim.py). All work lands in `v2_1/`. Each stage is
 arena-gated: no regression vs. `v1`, measured vs. `Producer Lite`.
 
 - **Stage 0 — Resolve Q2 (DONE, 2026-06-17, D-007).** Confirmed against the
-  engine: same-owner fleets **stack**. `v1_1/physics.py:resolve_combat` updated
+  engine: same-owner fleets **stack**. `v2_1/physics.py:resolve_combat` updated
   and pinned by `tests/test_v1_1_physics.py`.
-- **Stage 1 — Event timeline.** New `v1_1/timeline.py`: build per-planet
+- **Stage 1 — Event timeline.** New `v2_1/timeline.py`: build per-planet
   `arrivals` from `state.fleets` via the intercept layer; implement
   `garrison_at` / `owner_at`. Retire the naive `calculate_defense_needs`. Test:
   forecast vs. a vendored-engine rollout with no new launches must match
@@ -181,7 +181,7 @@ arena-gated: no regression vs. `v1`, measured vs. `Producer Lite`.
   max_force)` over the timeline + travel layer. Test on seeded boards.
 - **Stage 4 — Valuation + economy scoreboard.** `value(P)` and the
   production-integral projection. Test: scoreboard tracks a known sim.
-- **Stage 5 — Strategy rewrite (`v1_1/strategy.py`).** Cautious-expand sized by
+- **Stage 5 — Strategy rewrite (`v2_1/strategy.py`).** Cautious-expand sized by
   `value` + reachability; per-front defense off the timeline; snipe detection
   via `owner_at` + surplus; knockout trigger gated on a decisive-advantage
   check. Benchmark vs. `Producer Lite` after each sub-step.

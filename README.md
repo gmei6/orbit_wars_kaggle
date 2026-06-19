@@ -14,11 +14,12 @@ pitfalls in **[`LESSONS_LEARNED.md`](LESSONS_LEARNED.md)**.
 
 ## Layout
 
-The agent ships as a Python package, kept in two parallel copies:
+The agent ships as a Python package, kept in parallel copies — a frozen baseline per milestone plus the active dev copy:
 
 - **[`v1/`](v1/)** — frozen baseline. `targeting.py` holds the decision logic;
   `strategy.py` is a thin pass-through. The arena measures candidates against it.
-- **[`v1_1/`](v1_1/)** — active development. Implements the v2 Information Model with timeline forecasting, reachability race logic, and an economy-driven ROI valuation. Achieves a 100% win-rate against the v1 baseline.
+- **[`v2_1/`](v2_1/)** — active development. Implements the v2 Information Model with timeline forecasting, reachability race logic, and economy-driven ROI valuation (travel-time-discounted, D-016). Lineage `v1_1` → `v2_macro` → `v2_1`; beats the frozen `v2_macro` 57% and wins outright vs the `v1` baseline.
+- **[`v2_macro/`](v2_macro/)** — frozen prior baseline; the v2 arena yardstick. The old `v1_1/` dir was folded into this lineage and no longer exists.
 
 Both packages share the same modules:
 
@@ -27,8 +28,8 @@ Both packages share the same modules:
 | `agent.py` | Kaggle entry point. `act(obs)` → `parse` → `decide`; one line of wiring. |
 | `state.py` | Parse the raw observation into typed `Planet` / `Comet` / `Fleet` / `State`. |
 | `physics.py` | The oracle: frozen constants and game math (speed, sun collision, capture, combat). No strategy. |
-| `targeting.py` | v1: greedy targeting + fleet sizing. v1_1: pure-math helpers (trajectory cache, defense/attack calc). |
-| `strategy.py` | v1: pass-through to targeting. v1_1: the brain — scoring, defense reserves, synchronized launches. |
+| `targeting.py` | v1: greedy targeting + fleet sizing. v2_1: pure-math helpers (trajectory cache, defense/attack calc). |
+| `strategy.py` | v1: pass-through to targeting. v2_1: the brain — scoring, defense reserves, synchronized launches. |
 
 Supporting trees:
 
@@ -61,14 +62,14 @@ python scripts/check_okf.py docs   # OKF conformance of the docs bundle
 Self-play arena (needs the vendored env on the import path):
 
 ```bash
-PYTHONPATH=vendor python -m scripts.arena --a v1_1/agent.py --b v1/agent.py --games 200
+PYTHONPATH=vendor python -m scripts.arena --a v2_1/agent.py --b v2_macro/agent.py --games 200
 ```
 
-`--a` / `--b` take an agent path (`v1/agent.py`, `v1_1/agent.py`) or a built-in
+`--a` / `--b` take an agent path (`v1/agent.py`, `v2_1/agent.py`, `v2_macro/agent.py`) or a built-in
 (`starter`, `random`); the default opponent is `starter`.
 
 ## Roadmap
 
 Tracked in [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md) §5. Current focus: beat the
-`Producer Lite` opponent (v1 currently loses every game) via ROI-based targeting
-and leaner defensive reserves in `v1_1/strategy.py`.
+`Producer Lite` opponent via macro/expansion fixes — travel-time-discounted ROI
+(done, D-016) and earlier garrison release in `v2_1/strategy.py`.

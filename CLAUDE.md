@@ -25,8 +25,11 @@ Operate ponytail **full**, caveman **lite** unless I say otherwise
 - `v1/` — **frozen baseline**. Don't edit it to chase new behavior; it's the
   reference opponent the arena measures against (`targeting.py` is the brain,
   `strategy.py` a pass-through).
-- `v1_1/` — **active development**. Make changes here (`strategy.py` is the
-  brain, `targeting.py` is the pure-math oracle).
+- `v2_1/` — **active development**. Make changes here (`strategy.py` is the
+  brain, `targeting.py` is the pure-math oracle). Lineage: `v1_1` → `v2_macro`
+  → `v2_1`; the old `v1_1/` dir no longer exists.
+- `v2_macro/` — **frozen prior baseline**. The v2 arena yardstick; don't edit.
+- `v(teamwork-preview)/` — experimental variant, off the main line.
 - `scripts/` — `arena.py` (self-play eval), `sim.py` (local engine),
   `check_okf.py` (docs conformance). `vendor/` holds the Kaggle env.
 

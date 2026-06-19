@@ -2,7 +2,7 @@
 type: Module
 title: Strategy
 description: The primary decision-making brain: chooses targets, distributes fleets, and synchronizes arrivals.
-resource: v1_1/strategy.py
+resource: v2_1/strategy.py
 tags: [policy, strategy, macro]
 timestamp: 2026-06-16
 ---

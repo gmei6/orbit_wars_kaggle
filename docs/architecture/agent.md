@@ -2,7 +2,7 @@
 type: Module
 title: Agent
 description: Kaggle entry point — wires observation parsing to the policy each turn.
-resource: v1_1/agent.py
+resource: v2_1/agent.py
 tags: [entrypoint, kaggle]
 timestamp: 2026-06-16
 ---

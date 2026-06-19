@@ -2,14 +2,14 @@
 type: Module
 title: Targeting
 description: Legacy mathematical oracle. Primarily provides global trajectory caching.
-resource: v1_1/targeting.py
+resource: v2_1/targeting.py
 tags: [math, oracle, legacy]
 timestamp: 2026-06-18
 ---
 
 # Responsibility
 
-Legacy pure mathematical calculator. Precomputes global game trajectories (`get_trajectory_cache`) to avoid O(T) predictive simulations during real-time evaluation. In v1_1, offensive and defensive math has been migrated to `reachability.py` and `physics.py`.
+Legacy pure mathematical calculator. Precomputes global game trajectories (`get_trajectory_cache`) to avoid O(T) predictive simulations during real-time evaluation. In v2_1, offensive and defensive math has been migrated to `reachability.py` and `physics.py`.
 
 # Interface
 

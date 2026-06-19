@@ -2,7 +2,7 @@
 type: Module
 title: Timeline
 description: Forecasts future state by folding arriving fleets chronologically.
-resource: v1_1/timeline.py
+resource: v2_1/timeline.py
 tags: [forecast, state, v2]
 timestamp: 2026-06-18
 ---
